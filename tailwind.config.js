@@ -1,32 +1,51 @@
-
-export default {content: [
-  './index.html',
-  './src/**/*.{js,ts,jsx,tsx}'
-],
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
       },
       colors: {
-        navy: {
-          950: '#0f172a',
-          900: '#1e293b',
-          800: '#334155',
-          700: '#475569',
-          600: '#64748b',
+        // Primary Colors - Teal
+        primary: {
+          DEFAULT: "#058789",
+          dark: "#047071",
+          light: "#5fc4eb",
         },
+        // Secondary Colors - Gold
+        secondary: {
+          DEFAULT: "#ba9d20",
+          dark: "#9b7b18",
+        },
+        // Accent Colors
         accent: {
-          DEFAULT: '#f59e0b',
-          hover: '#d97706',
-          light: '#fbbf24',
+          DEFAULT: "#5fc4eb",
+          blue: "#5fc4eb",
+          gold: "#b7b065",
+          teal: "#058789",
+          yellow: "#ba9d20",
         },
-        success: '#10b981',
-        warning: '#f97316',
-        error: '#f43f5e',
-        info: '#3b82f6',
-        border: '#e7e5e3',
+        // Additional Brand Colors
+        light: "#b7b065",
+        gold: "#b7b065",
+        // Body & Background
+        bodycolor: "#566593",
+        bodybg: "#ffffff",
+        heading: "#058789",
+        // Legacy navy colors for backward compatibility
+        navy: {
+          950: "#0f172a",
+          900: "#1e293b",
+          800: "#334155",
+          700: "#475569",
+          600: "#64748b",
+        },
+        success: "#10b981",
+        warning: "#f97316",
+        error: "#f43f5e",
+        info: "#3b82f6",
+        border: "#e7e5e3",
       },
     },
   },
-}
+};
