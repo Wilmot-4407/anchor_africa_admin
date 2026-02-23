@@ -1,47 +1,47 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../utils/api";
-import { WhyChooseUs } from "../types";
+import { Faq } from "../types";
 
-export const fetchWhyChooseUs = createAsyncThunk(
-  "whyChooseUs/fetchContent",
+export const fetchFaq = createAsyncThunk(
+  "faqs/fetchContent",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/why-choose-us");
+      const response = await api.get("/faqs");
       return response.data.data;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch why choose us content",
+        err.response?.data?.message || "Failed to fetch faq content",
       );
     }
   },
 );
 
-export const upsertWhyChooseUs = createAsyncThunk(
-  "whyChooseUs/upsertContent",
-  async (data: Partial<WhyChooseUs>, { rejectWithValue }) => {
+export const upsertFaq = createAsyncThunk(
+  "faqs/upsertContent",
+  async (data: FormData | Partial<Faq>, { rejectWithValue }) => {
     try {
-      const response = await api.post("/why-choose-us", data);
+      const response = await api.post("/faqs", data);
       return response.data.data;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        err.response?.data?.message || "Failed to update why choose us content",
+        err.response?.data?.message || "Failed to update faq content",
       );
     }
   },
 );
 
-export const deleteWhyChooseUs = createAsyncThunk(
-  "whyChooseUs/deleteContent",
+export const deleteFaq = createAsyncThunk(
+  "faqs/deleteContent",
   async (_, { rejectWithValue }) => {
     try {
-      await api.delete("/why-choose-us");
+      await api.delete("/faqs");
       return null;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(
-        err.response?.data?.message || "Failed to delete why choose us content",
+        err.response?.data?.message || "Failed to delete faq content",
       );
     }
   },

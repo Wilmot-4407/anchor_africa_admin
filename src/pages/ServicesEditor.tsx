@@ -15,25 +15,15 @@ export function ServicesEditor() {
     (state: RootState) => state.services,
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<
-    "" | "clinic" | "institute" | string
-  >("");
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
   // Derive unique types from services
-  const serviceTypes = [
-    "All",
-    ...Array.from(new Set(services.map((s) => s.type).filter(Boolean))),
-  ];
-
   const filteredServices = services.filter((service) => {
     const matchesSearch =
       service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType =
-      !filterType || filterType === "All" || service.type === filterType;
-    return matchesSearch && matchesType;
+    return matchesSearch;
   });
 
   useEffect(() => {
@@ -82,7 +72,7 @@ export function ServicesEditor() {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
+      {/* <div className="flex flex-col md:flex-row gap-3 mb-6">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -93,24 +83,7 @@ export function ServicesEditor() {
             className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
           />
         </div>
-
-        {/* Type filter chips */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {serviceTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type === "All" ? "" : type)}
-              className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors whitespace-nowrap capitalize ${
-                (type === "All" && !filterType) || filterType === type
-                  ? "bg-navy-950 text-white border-navy-950"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
+      </div> */}
 
       {/* Content */}
       {isLoading ? (
@@ -121,7 +94,7 @@ export function ServicesEditor() {
         <EmptyState
           title="No services found"
           description={
-            searchTerm || filterType
+            searchTerm
               ? "Try adjusting your search or filter"
               : "Create your first service to get started"
           }

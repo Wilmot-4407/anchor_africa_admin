@@ -34,7 +34,7 @@ export const fetchTeamMember = createAsyncThunk(
 
 export const createTeamMember = createAsyncThunk(
   "team/createMember",
-  async (data: Partial<TeamMember>, { rejectWithValue }) => {
+  async (data: FormData | Partial<TeamMember>, { rejectWithValue }) => {
     try {
       const response = await api.post("/team", data);
       return response.data.data;
@@ -50,7 +50,7 @@ export const createTeamMember = createAsyncThunk(
 export const updateTeamMember = createAsyncThunk(
   "team/updateMember",
   async (
-    { id, data }: { id: string; data: Partial<TeamMember> },
+    { id, data }: { id: string; data: FormData | Partial<TeamMember> },
     { rejectWithValue },
   ) => {
     try {

@@ -4,7 +4,7 @@ import blogReducer from "./slices/blogSlice";
 import servicesReducer from "./slices/servicesSlice";
 import teamReducer from "./slices/teamSlice";
 import aboutReducer from "./slices/aboutSlice";
-import whyChooseUsReducer from "./slices/whyChooseUsSlice";
+import faqReducer from "./slices/faqsSlice";
 
 const store = configureStore({
   reducer: {
@@ -13,7 +13,7 @@ const store = configureStore({
     services: servicesReducer,
     team: teamReducer,
     about: aboutReducer,
-    whyChooseUs: whyChooseUsReducer,
+    faqs: faqReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

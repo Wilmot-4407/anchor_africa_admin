@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { createTeamMember, updateTeamMember } from "../../redux/actions/team";
 import { AppDispatch, RootState } from "../../redux/store";
 import { TeamMember } from "../../redux/types";
@@ -20,7 +20,6 @@ export function TeamForm({ member, onClose, onSuccess }: TeamFormProps) {
     slug: member?.slug || "",
     title: member?.title || "",
     specialty: member?.specialty || "",
-    image: member?.image || "",
     bio: member?.bio || "",
     education: member?.education?.join(", ") || "",
     specialties: member?.specialties?.join(", ") || "",
@@ -34,6 +33,10 @@ export function TeamForm({ member, onClose, onSuccess }: TeamFormProps) {
     twitter: member?.social?.twitter || "",
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    member?.image || null,
+  );
   const [formError, setFormError] = useState("");
 
   const handleChange = (
@@ -41,6 +44,18 @@ export function TeamForm({ member, onClose, onSuccess }: TeamFormProps) {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,44 +68,71 @@ export function TeamForm({ member, onClose, onSuccess }: TeamFormProps) {
     }
 
     try {
-      const payload = {
-        name: formData.name,
-        slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-"),
-        title: formData.title,
-        specialty: formData.specialty,
-        image: formData.image,
-        bio: formData.bio,
-        education: formData.education
+      // Always use FormData for consistency with backend's multer middleware
+      const fd = new FormData();
+      fd.append("name", formData.name);
+      fd.append(
+        "slug",
+        formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-"),
+      );
+      fd.append("title", formData.title);
+      fd.append("specialty", formData.specialty);
+      fd.append("bio", formData.bio);
+      fd.append(
+        "education",
+        formData.education
           .split(",")
           .map((e) => e.trim())
-          .filter(Boolean),
-        specialties: formData.specialties
+          .filter(Boolean)
+          .join(","),
+      );
+      fd.append(
+        "specialties",
+        formData.specialties
           .split(",")
           .map((s) => s.trim())
-          .filter(Boolean),
-        experience: formData.experience,
-        languages: formData.languages
+          .filter(Boolean)
+          .join(","),
+      );
+      fd.append("experience", formData.experience);
+      fd.append(
+        "languages",
+        formData.languages
           .split(",")
           .map((l) => l.trim())
-          .filter(Boolean),
-        contact: {
+          .filter(Boolean)
+          .join(","),
+      );
+
+      // Contact
+      fd.append(
+        "contact",
+        JSON.stringify({
           phone: formData.phone,
           email: formData.email,
           address: formData.address,
-        },
-        social: {
+        }),
+      );
+
+      // Social
+      fd.append(
+        "social",
+        JSON.stringify({
           linkedin: formData.linkedin,
           instagram: formData.instagram,
           twitter: formData.twitter,
-        },
-      };
+        }),
+      );
+
+      // Only append image if new file selected
+      if (imageFile) {
+        fd.append("image", imageFile);
+      }
 
       if (member?._id) {
-        await dispatch(
-          updateTeamMember({ id: member._id, data: payload }),
-        ).unwrap();
+        await dispatch(updateTeamMember({ id: member._id, data: fd })).unwrap();
       } else {
-        await dispatch(createTeamMember(payload)).unwrap();
+        await dispatch(createTeamMember(fd)).unwrap();
       }
       onSuccess?.();
       onClose();
@@ -136,6 +178,41 @@ export function TeamForm({ member, onClose, onSuccess }: TeamFormProps) {
               Basic Information
             </h3>
             <div className="space-y-4">
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-heading mb-2">
+                  Profile Image
+                </label>
+                <div className="flex gap-4">
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-20 h-20 object-cover rounded-lg border border-slate-200"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      id="image-input"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      disabled={isLoading}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="image-input"
+                      className="flex items-center justify-center w-full h-20 px-4 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-slate-300 transition disabled:opacity-50"
+                    >
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Upload className="w-4 h-4" />
+                        <span className="text-sm">Click to upload</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               {/* Name */}
               <div>
                 <label className="block text-sm font-medium text-heading mb-2">
@@ -197,22 +274,6 @@ export function TeamForm({ member, onClose, onSuccess }: TeamFormProps) {
                   disabled={isLoading}
                   className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-50"
                   placeholder="auto-generated from name"
-                />
-              </div>
-
-              {/* Image URL */}
-              <div>
-                <label className="block text-sm font-medium text-heading mb-2">
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-50"
-                  placeholder="https://example.com/image.jpg"
                 />
               </div>
 

@@ -15,7 +15,7 @@ import { AboutEditor } from "../pages/AboutEditor";
 import { BlogEditor } from "../pages/BlogEditor";
 import { ServicesEditor } from "../pages/ServicesEditor";
 import { TeamEditor } from "../pages/TeamEditor";
-import { WhyChooseUsEditor } from "../pages/WhyChooseUsEditor";
+import { FaqEditor } from "./FaqEditor";
 
 interface SectionCard {
   id: WebsiteSubsection;
@@ -94,7 +94,7 @@ export function WebsiteEditor() {
   if (activeSubsection === "blog") return <BlogEditor />;
   if (activeSubsection === "services") return <ServicesEditor />;
   if (activeSubsection === "team") return <TeamEditor />;
-  if (activeSubsection === "why-choose-us") return <WhyChooseUsEditor />;
+  if (activeSubsection === "why-choose-us") return <FaqEditor />;
 
   // Overview grid
   return (

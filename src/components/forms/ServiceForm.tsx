@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { createService, updateService } from "../../redux/actions/services";
 import { AppDispatch, RootState } from "../../redux/store";
 import { Service } from "../../redux/types";
@@ -31,6 +31,10 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
     benefits: service?.benefits?.join(", ") || "",
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    service?.image || null,
+  );
   const [formError, setFormError] = useState("");
 
   const handleChange = (
@@ -40,6 +44,18 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,33 +68,46 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
     }
 
     try {
-      const payload = {
-        title: formData.title,
-        slug:
-          formData.slug || formData.title.toLowerCase().replace(/\s+/g, "-"),
-        type: formData.type,
-        category: formData.category,
-        shortDescription: formData.shortDescription,
-        fullDescription: formData.fullDescription,
-        icon: formData.icon,
-        features: formData.features
+      // Always use FormData for consistency with backend's multer middleware
+      const fd = new FormData();
+      fd.append("title", formData.title);
+      fd.append(
+        "slug",
+        formData.slug || formData.title.toLowerCase().replace(/\s+/g, "-"),
+      );
+      fd.append("type", formData.type);
+      fd.append("category", formData.category);
+      fd.append("shortDescription", formData.shortDescription);
+      fd.append("fullDescription", formData.fullDescription);
+      fd.append("icon", formData.icon);
+      fd.append(
+        "features",
+        formData.features
           .split(",")
           .map((f) => f.trim())
-          .filter(Boolean),
-        duration: formData.duration,
-        specialists: formData.specialists,
-        benefits: formData.benefits
+          .filter(Boolean)
+          .join(","),
+      );
+      fd.append("duration", formData.duration);
+      fd.append("specialists", formData.specialists);
+      fd.append(
+        "benefits",
+        formData.benefits
           .split(",")
           .map((b) => b.trim())
-          .filter(Boolean),
-      };
+          .filter(Boolean)
+          .join(","),
+      );
+
+      // Only append image if new file selected
+      if (imageFile) {
+        fd.append("image", imageFile);
+      }
 
       if (service?._id) {
-        await dispatch(
-          updateService({ id: service._id, data: payload }),
-        ).unwrap();
+        await dispatch(updateService({ id: service._id, data: fd })).unwrap();
       } else {
-        await dispatch(createService(payload)).unwrap();
+        await dispatch(createService(fd)).unwrap();
       }
 
       onSuccess?.();
@@ -112,6 +141,41 @@ export function ServiceForm({ service, onClose, onSuccess }: ServiceFormProps) {
               <p className="text-red-700 text-sm">{formError || error}</p>
             </div>
           )}
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-heading mb-2">
+              Service Image
+            </label>
+            <div className="flex gap-4">
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-20 h-20 object-cover rounded-lg border border-slate-200"
+                />
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  id="image-input"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  disabled={isLoading}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="image-input"
+                  className="flex items-center justify-center w-full h-20 px-4 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-slate-300 transition disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Upload className="w-4 h-4" />
+                    <span className="text-sm">Click to upload</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
 
           {/* Title */}
           <div>

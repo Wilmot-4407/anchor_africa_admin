@@ -32,7 +32,11 @@ export interface BlogPost {
   image: string;
   author?: string;
   date: string;
+  publishedAt?: string;
+  status: "draft" | "published" | "scheduled";
+  category?: string;
   tags: string[];
+  views?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,6 +59,7 @@ export interface Service {
   shortDescription: string;
   fullDescription: string;
   icon: string;
+  image?: string;
   features: string[];
   duration: string;
   specialists: string;
@@ -114,11 +119,23 @@ export interface AboutSection {
   icon?: string;
 }
 
+export interface OpenHour {
+  day: string;
+  hours: string;
+  closed: boolean;
+}
+
 export interface About {
   _id: string;
   title: string;
   description: string;
   image?: string;
+  features: string[];
+  ctaText: string;
+  ctaLink: string;
+  phone?: string;
+  openHours: OpenHour[];
+  visible: boolean;
   sections: AboutSection[];
   createdAt: string;
   updatedAt: string;
@@ -130,24 +147,33 @@ export interface AboutState {
   error: string | null;
 }
 
-// WhyChooseUs Types
-export interface WhyChooseUsReason {
-  icon: string;
-  title: string;
-  description: string;
+// Faq Types
+export type FaqReasonType =
+  | "General"
+  | "Services"
+  | "Treatment"
+  | "Pricing"
+  | "Insurance"
+  | "Other";
+
+export interface FaqReason {
+  _id?: string;
+  question: string;
+  answer: string;
+  type: FaqReasonType;
 }
 
-export interface WhyChooseUs {
+export interface Faq {
   _id: string;
   title: string;
   backgroundImage?: string;
-  reasons: WhyChooseUsReason[];
+  reasons: FaqReason[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface WhyChooseUsState {
-  content: WhyChooseUs | null;
+export interface FaqState {
+  content: Faq | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -159,5 +185,5 @@ export interface RootState {
   services: ServiceState;
   team: TeamState;
   about: AboutState;
-  whyChooseUs: WhyChooseUsState;
+  faqs: FaqState;
 }

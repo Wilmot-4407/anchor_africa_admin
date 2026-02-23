@@ -172,7 +172,7 @@ export function DashboardView() {
           </motion.div>
 
           {/* Quick Actions */}
-          <motion.div
+          {/* <motion.div
             variants={fadeUp}
             className="grid grid-cols-2 sm:grid-cols-4 gap-3"
           >
@@ -205,7 +205,7 @@ export function DashboardView() {
                 setActiveSubsection("media-library");
               }}
             />
-          </motion.div>
+          </motion.div> */}
         </div>
 
         {/* Right */}

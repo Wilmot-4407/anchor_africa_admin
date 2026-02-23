@@ -34,7 +34,7 @@ export const fetchService = createAsyncThunk(
 
 export const createService = createAsyncThunk(
   "services/createService",
-  async (data: Partial<Service>, { rejectWithValue }) => {
+  async (data: FormData | Partial<Service>, { rejectWithValue }) => {
     try {
       const response = await api.post("/services", data);
       return response.data.data;
@@ -50,7 +50,7 @@ export const createService = createAsyncThunk(
 export const updateService = createAsyncThunk(
   "services/updateService",
   async (
-    { id, data }: { id: string; data: Partial<Service> },
+    { id, data }: { id: string; data: FormData | Partial<Service> },
     { rejectWithValue },
   ) => {
     try {
