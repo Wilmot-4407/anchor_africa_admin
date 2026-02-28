@@ -1,15 +1,34 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
-import { Plus, Edit2, Trash2, Search, GripVertical } from "lucide-react";
-import { fetchTeamMembers, deleteTeamMember } from "../redux/actions/team";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
+  X,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  UserCheck,
+  UserX,
+  Mail,
+  Phone,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
+import { fetchTeamMembersAdmin, deleteTeamMember } from "../redux/actions/team";
 import { AppDispatch, RootState } from "../redux/store";
-import { CardSkeletonLoader } from "../components/common/SkeletonLoader";
+import { PageSpinner } from "../components/common/SkeletonLoader";
 import { EmptyState, ErrorState } from "../components/common/StateComponents";
 import { TeamForm } from "../components/forms/TeamForm";
 import { TeamMember } from "../redux/types";
+import toast from "../utils/toast";
 
-// Generate initials + a consistent color from a name
+const PAGE_SIZE = 8;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -20,61 +39,238 @@ function getInitials(name: string) {
 }
 
 const AVATAR_COLORS = [
-  "bg-slate-800",
-  "bg-indigo-700",
-  "bg-emerald-700",
-  "bg-rose-700",
-  "bg-violet-700",
-  "bg-amber-700",
+  "#058789",
+  "#047071",
+  "#5fc4eb",
+  "#ba9d20",
+  "#b7b065",
+  "#9b7b18",
 ];
-
 function avatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
-// Derive category filter options from members
-function getCategories(members: TeamMember[]): string[] {
-  const cats = new Set<string>();
-  members.forEach((m) => {
-    // Support both `category` and `specialty` as category source
-    const cat = (m as any).category || m.specialty || "";
-    if (cat) cats.add(cat);
-  });
-  return Array.from(cats);
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+function StatCard({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  color: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+      <div
+        className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className="text-2xl font-bold text-slate-800 leading-none">
+          {value}
+        </p>
+        <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
 }
 
+// ── Pagination ────────────────────────────────────────────────────────────────
+function Pagination({
+  page,
+  totalPages,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/60 rounded-b-xl">
+      <p className="text-xs text-slate-500">
+        Page <span className="font-semibold text-slate-700">{page}</span> of{" "}
+        <span className="font-semibold text-slate-700">{totalPages}</span>
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onChange(page - 1)}
+          disabled={page === 1}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeft size={15} />
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+          <button
+            key={n}
+            onClick={() => onChange(n)}
+            className={`min-w-[30px] h-[30px] rounded-lg text-xs font-semibold border transition-colors ${n === page ? "bg-primary text-white border-primary" : "border-slate-200 text-slate-600 hover:bg-white hover:text-primary"}`}
+          >
+            {n}
+          </button>
+        ))}
+        <button
+          onClick={() => onChange(page + 1)}
+          disabled={page === totalPages}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Delete Confirmation Modal ─────────────────────────────────────────────────
+function DeleteModal({
+  memberName,
+  onConfirm,
+  onCancel,
+  isDeleting,
+}: {
+  memberName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isDeleting: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.18 }}
+        className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm z-10"
+      >
+        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle size={22} className="text-red-500" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-800 text-center">
+          Delete Team Member
+        </h3>
+        <p className="text-sm text-slate-500 text-center mt-2">
+          Are you sure you want to delete{" "}
+          <span className="font-semibold text-slate-700">{memberName}</span>?
+          This action cannot be undone.
+        </p>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isDeleting && <RefreshCw size={13} className="animate-spin" />}
+            Delete
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export function TeamEditor() {
   const dispatch = useDispatch<AppDispatch>();
   const { members, isLoading, error } = useSelector(
     (state: RootState) => state.team,
   );
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+
+  const [nameSearch, setNameSearch] = useState("");
+  const [phoneSearch, setPhoneSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [activeFilters, setActiveFilters] = useState({
+    name: "",
+    phone: "",
+    status: "",
+  });
   const [showForm, setShowForm] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
-
-  const categories = ["All", ...getCategories(members)];
-
-  const filteredMembers = members.filter((member) => {
-    const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const memberCategory = (member as any).category || member.specialty || "";
-    const matchesCategory =
-      activeCategory === "All" || memberCategory === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    dispatch(fetchTeamMembers());
+    dispatch(fetchTeamMembersAdmin());
   }, [dispatch]);
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this team member?")) {
-      await dispatch(deleteTeamMember(id));
+  // Stats
+  const activeCount = members.filter((m) => m.isActive !== false).length;
+  const inactiveCount = members.length - activeCount;
+
+  // Specialty breakdown for a simple count
+  const specialties = [
+    ...new Set(members.map((m) => m.specialty).filter(Boolean)),
+  ];
+
+  // Filter
+  const filtered = members.filter((m) => {
+    if (activeFilters.name) {
+      const q = activeFilters.name.toLowerCase();
+      const match =
+        m.name.toLowerCase().includes(q) ||
+        m.specialty.toLowerCase().includes(q) ||
+        m.title.toLowerCase().includes(q) ||
+        (m.contact?.email || "").toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    if (activeFilters.phone) {
+      if (!(m.contact?.phone || "").includes(activeFilters.phone)) return false;
+    }
+    if (activeFilters.status === "active" && m.isActive === false) return false;
+    if (activeFilters.status === "inactive" && m.isActive !== false)
+      return false;
+    return true;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const hasActiveFilters =
+    activeFilters.name || activeFilters.phone || activeFilters.status;
+
+  const handleSearch = () => {
+    setActiveFilters({
+      name: nameSearch,
+      phone: phoneSearch,
+      status: statusFilter,
+    });
+    setPage(1);
+  };
+  const handleReset = () => {
+    setNameSearch("");
+    setPhoneSearch("");
+    setStatusFilter("");
+    setActiveFilters({ name: "", phone: "", status: "" });
+    setPage(1);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingMember) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteTeamMember(deletingMember._id)).unwrap();
+      toast.success("Team member deleted successfully");
+      setDeletingMember(null);
+    } catch {
+      toast.error("Failed to delete team member");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -82,16 +278,13 @@ export function TeamEditor() {
     setEditingMember(member || null);
     setShowForm(true);
   };
-
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingMember(null);
   };
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setEditingMember(null);
-    dispatch(fetchTeamMembers());
+  const handleSuccess = () => {
+    handleCloseForm();
+    dispatch(fetchTeamMembersAdmin());
   };
 
   return (
@@ -99,156 +292,296 @@ export function TeamEditor() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="p-8"
+      className="p-8 max-w-7xl mx-auto"
     >
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-heading">Team</h1>
+          <h1 className="text-2xl font-bold text-primary">Team</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            {members.length} team member{members.length !== 1 ? "s" : ""}
+            Manage ANCHOR clinicians and staff
           </p>
         </div>
         <button
           onClick={() => handleOpenForm()}
-          className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors whitespace-nowrap"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold transition-colors shadow-sm whitespace-nowrap"
         >
-          <Plus className="w-4 h-4" />
-          Add Member
+          <Plus className="w-4 h-4" /> Add Member
         </button>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search team..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+      {/* ── Stats ── */}
+      {!isLoading && !error && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <StatCard
+            icon={<Users size={18} className="text-primary" />}
+            label="Total Members"
+            value={members.length}
+            color="bg-primary/8"
           />
-        </div>
-
-        {/* Category filter chips */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
-                activeCategory === cat
-                  ? "bg-navy-950 text-white border-navy-950"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      {isLoading ? (
-        <CardSkeletonLoader count={3} />
-      ) : error ? (
-        <ErrorState
-          message={error}
-          onRetry={() => dispatch(fetchTeamMembers())}
-        />
-      ) : filteredMembers.length === 0 ? (
-        <EmptyState
-          title="No team members found"
-          description={
-            searchTerm || activeCategory !== "All"
-              ? "Try adjusting your search or filter"
-              : "Add your first team member to get started"
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredMembers.map((member) => {
-            const initials = member.image ? null : getInitials(member.name);
-            const color = avatarColor(member.name);
-            const memberCategory =
-              (member as any).category || member.specialty || "";
-
-            return (
-              <motion.div
-                key={member._id}
-                layout
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all p-5 group"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Drag handle */}
-                  <GripVertical className="w-4 h-4 text-slate-300 mt-1 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-
-                  {/* Avatar */}
-                  {member.image ? (
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 ${color}`}
-                    >
-                      {initials}
-                    </div>
-                  )}
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-heading text-sm leading-tight">
-                      {member.name}
-                    </p>
-                    <p className="text-xs text-amber-600 font-medium mt-0.5">
-                      {member.title}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                      {member.specialty}
-                    </p>
-                    {memberCategory && (
-                      <span className="inline-block mt-2 px-2.5 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200">
-                        {memberCategory}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions - show on hover */}
-                <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => handleOpenForm(member)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(member._id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Delete
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
+          <StatCard
+            icon={<UserCheck size={18} className="text-emerald-600" />}
+            label="Active"
+            value={activeCount}
+            color="bg-emerald-50"
+          />
+          <StatCard
+            icon={<UserX size={18} className="text-secondary" />}
+            label="Inactive"
+            value={inactiveCount}
+            color="bg-secondary/10"
+          />
+          <StatCard
+            icon={<Users size={18} className="text-accent" />}
+            label="Specialties"
+            value={specialties.length}
+            color="bg-accent/10"
+          />
         </div>
       )}
 
-      {/* Form Modal */}
+      {/* ── Filters ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 mb-5 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Name / title / specialty / email */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search name, title, specialty…"
+              value={nameSearch}
+              onChange={(e) => setNameSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 bg-white transition-colors"
+            />
+          </div>
+          {/* Phone */}
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Filter by contact number…"
+              value={phoneSearch}
+              onChange={(e) => setPhoneSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 bg-white transition-colors"
+            />
+          </div>
+          {/* Status */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white text-slate-700"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2 pt-1 justify-end">
+          {hasActiveFilters && (
+            <span className="text-xs text-slate-500 mr-auto">
+              Showing{" "}
+              <span className="font-semibold text-slate-700">
+                {filtered.length}
+              </span>{" "}
+              result{filtered.length !== 1 ? "s" : ""}
+            </span>
+          )}
+          <button
+            onClick={handleSearch}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
+          >
+            <Search size={14} /> Apply Filters
+          </button>
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            <RotateCcw size={14} /> Reset
+          </button>
+        </div>
+      </div>
+
+      {/* ── Table ── */}
+      {isLoading ? (
+        <PageSpinner label="Loading team members…" />
+      ) : error ? (
+        <ErrorState
+          message={error}
+          onRetry={() => dispatch(fetchTeamMembersAdmin())}
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title="No team members found"
+          description={
+            hasActiveFilters
+              ? "Try a different search term or reset filters."
+              : "Add your first team member to get started."
+          }
+          action={
+            hasActiveFilters ? (
+              <button
+                onClick={handleReset}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+              >
+                <RotateCcw size={14} /> Reset filters
+              </button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          {/* Table head */}
+          <div className="grid grid-cols-[40px_200px_1fr_1fr_140px_80px_170px] gap-3 px-5 py-3 border-b border-slate-100 bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+            <span>#</span>
+            <span>Name</span>
+            <span>Title / Role</span>
+            <span>Specialty</span>
+            <span>Contact</span>
+            <span>Status</span>
+            <span className="text-center">Actions</span>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {paginated.map((member, idx) => {
+              const initials = getInitials(member.name);
+              const bgColor = avatarColor(member.name);
+              const isActive = member.isActive !== false;
+
+              return (
+                <div
+                  key={member._id}
+                  className="grid grid-cols-[40px_200px_1fr_1fr_140px_80px_170px] gap-3 items-center px-5 py-3.5 hover:bg-slate-50/70 transition-colors group"
+                >
+                  {/* # */}
+                  <span className="text-xs font-medium text-slate-400">
+                    {(page - 1) * PAGE_SIZE + idx + 1}
+                  </span>
+
+                  {/* Avatar + Name */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    {member.image ? (
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className="w-9 h-9 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
+                      />
+                    ) : (
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm"
+                        style={{ background: bgColor }}
+                      >
+                        {initials}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">
+                        {member.name}
+                      </p>
+                      <p className="text-[11px] text-primary font-mono truncate">
+                        /{member.slug}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-700 font-medium truncate">
+                      {member.title}
+                    </p>
+                  </div>
+
+                  {/* Specialty */}
+                  <div>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20 truncate max-w-full">
+                      {member.specialty || "—"}
+                    </span>
+                  </div>
+
+                  {/* Contact */}
+                  <div className="space-y-0.5">
+                    {member.contact?.email && (
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500 truncate">
+                        <Mail
+                          size={10}
+                          className="text-primary flex-shrink-0"
+                        />
+                        <span className="truncate">{member.contact.email}</span>
+                      </div>
+                    )}
+                    {member.contact?.phone && (
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500">
+                        <Phone
+                          size={10}
+                          className="text-primary flex-shrink-0"
+                        />
+                        <span>{member.contact.phone}</span>
+                      </div>
+                    )}
+                    {!member.contact?.email && !member.contact?.phone && (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    {isActive ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">
+                        Inactive
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpenForm(member)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg transition-colors border border-primary/15"
+                    >
+                      <Edit2 size={12} /> Edit
+                    </button>
+                    <button
+                      onClick={() => setDeletingMember(member)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100"
+                    >
+                      <Trash2 size={12} /> Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onChange={(p) => {
+              setPage(p);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
+        </div>
+      )}
+
       {showForm && (
         <TeamForm
           member={editingMember}
           onClose={handleCloseForm}
-          onSuccess={handleFormSuccess}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {deletingMember && (
+        <DeleteModal
+          memberName={deletingMember.name}
+          onConfirm={handleDelete}
+          onCancel={() => setDeletingMember(null)}
+          isDeleting={isDeleting}
         />
       )}
     </motion.div>

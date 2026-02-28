@@ -1,6 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import api from "../../utils/api";
 import { Service } from "../types";
+
+const getErrMsg = (error: unknown, fallback: string): string => {
+  const err = error as {
+    response?: { data?: { error?: string; message?: string } };
+  };
+  return err.response?.data?.error || err.response?.data?.message || fallback;
+};
 
 export const fetchServices = createAsyncThunk(
   "services/fetchServices",
@@ -9,10 +17,20 @@ export const fetchServices = createAsyncThunk(
       const response = await api.get("/services");
       return response.data.data;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch services",
-      );
+      return rejectWithValue(getErrMsg(error, "Failed to fetch services"));
+    }
+  },
+);
+
+// Admin version — includes unpublished services
+export const fetchServicesAdmin = createAsyncThunk(
+  "services/fetchServicesAdmin",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/services/admin/all");
+      return response.data.data;
+    } catch (error: unknown) {
+      return rejectWithValue(getErrMsg(error, "Failed to fetch services"));
     }
   },
 );
@@ -24,10 +42,7 @@ export const fetchService = createAsyncThunk(
       const response = await api.get(`/services/${slug}`);
       return response.data.data;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch service",
-      );
+      return rejectWithValue(getErrMsg(error, "Failed to fetch service"));
     }
   },
 );
@@ -37,12 +52,12 @@ export const createService = createAsyncThunk(
   async (data: FormData | Partial<Service>, { rejectWithValue }) => {
     try {
       const response = await api.post("/services", data);
+      toast.success("Service created successfully!");
       return response.data.data;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to create service",
-      );
+      const msg = getErrMsg(error, "Failed to create service");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -55,12 +70,12 @@ export const updateService = createAsyncThunk(
   ) => {
     try {
       const response = await api.put(`/services/${id}`, data);
+      toast.success("Service updated successfully!");
       return response.data.data;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to update service",
-      );
+      const msg = getErrMsg(error, "Failed to update service");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -70,12 +85,12 @@ export const deleteService = createAsyncThunk(
   async (id: string, { rejectWithValue }) => {
     try {
       await api.delete(`/services/${id}`);
+      toast.success("Service deleted successfully!");
       return id;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to delete service",
-      );
+      const msg = getErrMsg(error, "Failed to delete service");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );

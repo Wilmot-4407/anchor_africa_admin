@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
-import { UploadCloud, Plus, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
+import { UploadCloud, Plus, Trash2, X } from "lucide-react";
 import { fetchAbout, upsertAbout } from "../redux/actions/about";
 import { AppDispatch, RootState } from "../redux/store";
 import { AboutEditorSkeleton } from "../components/common/AboutEditorSkeleton";
-import { useNavigation } from "../context/NavigationContext";
 import { OpenHour } from "../redux/types";
 
 // ─── defaults ────────────────────────────────────────────────────────────────
@@ -162,7 +162,6 @@ function ImageUploadArea({
 
 export function AboutEditor() {
   const dispatch = useDispatch<AppDispatch>();
-  const { addToast } = useNavigation();
   const { about, isLoading } = useSelector((state: RootState) => state.about);
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
@@ -217,7 +216,7 @@ export function AboutEditor() {
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.description.trim()) {
-      addToast({ type: "error", title: "Title and description are required" });
+      toast.error("Title and description are required");
       return;
     }
     setIsSaving(true);
@@ -239,17 +238,9 @@ export function AboutEditor() {
       await dispatch(upsertAbout(payload)).unwrap();
       setIsDirty(false);
       setImageFile(null);
-      addToast({
-        type: "success",
-        title: "Changes saved",
-        message: "About section updated.",
-      });
+      // toast is fired in the action, no need to fire here again
     } catch {
-      addToast({
-        type: "error",
-        title: "Save failed",
-        message: "Could not save. Please try again.",
-      });
+      // toast is fired in the action on error
     } finally {
       setIsSaving(false);
     }
@@ -261,10 +252,6 @@ export function AboutEditor() {
     setIsDirty(false);
   };
 
-  // ── KEY FIX ───────────────────────────────────────────────────────────────
-  // Only show skeleton on the INITIAL page load (no data yet).
-  // When saving, isLoading becomes true again BUT about already exists,
-  // so we keep the form visible and show "Saving…" on the button instead.
   if (isLoading && !about) {
     return <AboutEditorSkeleton />;
   }
@@ -499,9 +486,7 @@ export function AboutEditor() {
               aria-checked={form.visible}
               disabled={isSaving}
               onClick={() => set("visible", !form.visible)}
-              className={`relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 flex-shrink-0 disabled:opacity-50 ${
-                form.visible ? "bg-primary" : "bg-slate-200"
-              }`}
+              className={`relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 flex-shrink-0 disabled:opacity-50 ${form.visible ? "bg-primary" : "bg-slate-200"}`}
             >
               <span
                 className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${form.visible ? "translate-x-4" : "translate-x-0"}`}
@@ -520,13 +505,11 @@ export function AboutEditor() {
           >
             Discard Changes
           </button>
-
-          {/* Save button — always visible, shows spinner + "Saving…" during save */}
           <button
             type="button"
             onClick={handleSave}
             disabled={isSaving || !isDirty}
-            className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 shadow-sm min-w-[120px] flex items-center justify-center gap-2"
+            className="px-5 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 shadow-sm min-w-[120px] flex items-center justify-center gap-2"
           >
             {isSaving ? (
               <>

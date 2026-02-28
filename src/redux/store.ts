@@ -5,6 +5,9 @@ import servicesReducer from "./slices/servicesSlice";
 import teamReducer from "./slices/teamSlice";
 import aboutReducer from "./slices/aboutSlice";
 import faqReducer from "./slices/faqsSlice";
+import logsReducer from "./slices/logsSlice";
+import usersReducer from "./slices/usersSlice";
+import type { RootState } from "./types";
 
 const store = configureStore({
   reducer: {
@@ -14,6 +17,8 @@ const store = configureStore({
     team: teamReducer,
     about: aboutReducer,
     faqs: faqReducer,
+    logs: logsReducer,
+    users: usersReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -24,7 +29,7 @@ const store = configureStore({
     }),
 });
 
-export type RootState = ReturnType<typeof store.getState>;
+export type { RootState };
 export type AppDispatch = typeof store.dispatch;
 
 export default store;

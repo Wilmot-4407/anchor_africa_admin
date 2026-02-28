@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { TeamState } from "../types";
 import {
   fetchTeamMembers,
+  fetchTeamMembersAdmin,
   fetchTeamMember,
   createTeamMember,
   updateTeamMember,
@@ -28,7 +29,7 @@ const teamSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch Members
+    // Fetch Members (public)
     builder.addCase(fetchTeamMembers.pending, (state) => {
       state.isLoading = true;
       state.error = null;
@@ -40,6 +41,22 @@ const teamSlice = createSlice({
       state.error = null;
     });
     builder.addCase(fetchTeamMembers.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    });
+
+    // Fetch Members (admin — includes inactive)
+    builder.addCase(fetchTeamMembersAdmin.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchTeamMembersAdmin.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.members = action.payload;
+      state.totalCount = action.payload.length;
+      state.error = null;
+    });
+    builder.addCase(fetchTeamMembersAdmin.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
     });

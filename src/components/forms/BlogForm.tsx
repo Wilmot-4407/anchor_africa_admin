@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { X, UploadCloud } from "lucide-react";
-import toast from "react-hot-toast";
 import { createBlogPost, updateBlogPost } from "../../redux/actions/blog";
 import { AppDispatch, RootState } from "../../redux/store";
 import { BlogPost } from "../../redux/types";
+import { BrandSpinner } from "../common/SkeletonLoader";
+// import toast from "../../utils/toast";
 
 interface BlogFormProps {
   post?: BlogPost | null;
@@ -20,11 +21,13 @@ const CATEGORIES = [
   "Mental Health",
   "Therapy",
   "Walking",
+  "Leadership",
+  "Research",
   "Other",
 ];
 
 const inputCls =
-  "w-full px-3.5 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 transition-colors bg-white disabled:bg-slate-50 disabled:cursor-not-allowed";
+  "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 transition-colors bg-white disabled:bg-slate-50 disabled:cursor-not-allowed";
 
 function Label({
   children,
@@ -34,10 +37,18 @@ function Label({
   required?: boolean;
 }) {
   return (
-    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
       {children}
       {required && <span className="text-red-400 ml-0.5">*</span>}
     </label>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 pt-1">
+      {children}
+    </h3>
   );
 }
 
@@ -56,28 +67,23 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
   const { isLoading } = useSelector((state: RootState) => state.blog);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<{
-    title: string;
-    slug: string;
-    content: string;
-    author: string;
-    category: string;
-    status: BlogPost["status"];
-    tags: string;
-  }>({
+  const [formData, setFormData] = useState({
     title: post?.title || "",
     slug: post?.slug || "",
+    excerpt: post?.excerpt || "",
     content: post?.content || "",
     author: post?.author || "",
+    authorTitle: post?.authorTitle || "",
     category: post?.category || "",
-    status: post?.status || "draft",
-    tags: post?.tags?.join(", ") || "",
+    status: post?.status || ("draft" as BlogPost["status"]),
+    tags: Array.isArray(post?.tags) ? post.tags.join(", ") : "",
+    isFeatured: post?.isFeatured || false,
+    metaTitle: post?.metaTitle || "",
+    metaDescription: post?.metaDescription || "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(
-    post?.image && post.image !== "default-blog.png" ? post.image : "",
-  );
+  const [imagePreview, setImagePreview] = useState<string>(post?.image || "");
   const [formError, setFormError] = useState("");
 
   const handleChange = (
@@ -85,14 +91,18 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      const updated = { ...prev, [name]: value };
-      if (name === "title" && !post) {
-        updated.slug = slugify(value);
-      }
-      return updated;
-    });
+    const { name, value, type } = e.target;
+    const val =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
+    if (name === "title" && !post?.slug) {
+      setFormData((prev) => ({
+        ...prev,
+        title: value as string,
+        slug: slugify(value as string),
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: val }));
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,12 +110,6 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,84 +125,117 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
       return;
     }
 
-    const toastId = toast.loading(post ? "Saving changes…" : "Creating post…");
+    const fd = new FormData();
+    Object.entries(formData).forEach(([key, val]) => {
+      if (key === "tags") {
+        const tagsArr = (val as string)
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
+        fd.append("tags", JSON.stringify(tagsArr));
+      } else {
+        fd.append(key, String(val));
+      }
+    });
+    if (imageFile) fd.append("image", imageFile);
 
     try {
-      const fd = new FormData();
-      fd.append("title", formData.title);
-      fd.append("slug", formData.slug || slugify(formData.title));
-      fd.append("content", formData.content);
-      fd.append("author", formData.author);
-      fd.append("category", formData.category);
-      fd.append("status", formData.status);
-
-      const tagsArray = formData.tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      fd.append("tags", tagsArray.join(","));
-
-      if (imageFile) {
-        fd.append("image", imageFile);
-      }
-
       if (post?._id) {
         await dispatch(updateBlogPost({ id: post._id, data: fd })).unwrap();
-        toast.success("Post updated successfully!", { id: toastId });
+        // toast.success("Blog post updated successfully!");
       } else {
         await dispatch(createBlogPost(fd)).unwrap();
-        toast.success(
-          formData.status === "published"
-            ? "Post published successfully!"
-            : "Post created successfully!",
-          { id: toastId },
-        );
+        // toast.success("Blog post created successfully!");
       }
-
       onSuccess?.();
       onClose();
     } catch (err) {
-      const message =
-        typeof err === "string" ? err : "Failed to save blog post";
-      setFormError(message);
-      toast.error(message, { id: toastId });
+      console.error("Blog creation failed", err);
     }
   };
 
+  const isEditing = !!post;
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col">
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[94vh] flex flex-col border border-slate-200/60">
+        {/* Top accent strip */}
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
           <div>
-            <h2 className="text-lg font-semibold text-slate-800">
-              {post ? "Edit Post" : "New Blog Post"}
+            <h2 className="text-lg font-bold text-slate-800">
+              {isEditing ? "Edit Blog Post" : "New Blog Post"}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              {post
-                ? `Editing "${post.title}"`
-                : "Fill in the details below to create a new post"}
+              {isEditing
+                ? "Update the post details below"
+                : "Fill in the fields to publish a new article"}
             </p>
           </div>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* ── Scrollable body ── */}
+        {/* Body */}
         <form
+          id="blog-post-form"
           onSubmit={handleSubmit}
           className="flex-1 overflow-y-auto px-6 py-5 space-y-5"
         >
           {formError && (
-            <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-lg">
-              <p className="text-sm text-red-600">{formError}</p>
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-600 font-medium">{formError}</p>
             </div>
           )}
+
+          {/* ── Content ── */}
+          <SectionHeading>Content</SectionHeading>
+
+          {/* Cover image — preview inside the zone */}
+          <div>
+            <Label>Cover Image</Label>
+            <input
+              ref={fileInputRef}
+              id="blog-image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            <label htmlFor="blog-image" className="block w-full cursor-pointer">
+              <div className="relative w-full h-44 border-2 border-dashed border-slate-200 rounded-xl overflow-hidden hover:border-primary/50 transition-colors group">
+                {imagePreview ? (
+                  <>
+                    <img
+                      src={imagePreview}
+                      alt="Cover preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <UploadCloud className="w-6 h-6 text-white mb-1" />
+                      <span className="text-white text-xs font-semibold">
+                        Click to change image
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-400">
+                    <UploadCloud className="w-7 h-7" />
+                    <span className="text-sm">Click to upload cover image</span>
+                    <span className="text-xs text-slate-300">
+                      JPG, PNG, WEBP up to 10MB
+                    </span>
+                  </div>
+                )}
+              </div>
+            </label>
+          </div>
 
           {/* Title */}
           <div>
@@ -210,7 +247,7 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
               onChange={handleChange}
               disabled={isLoading}
               className={inputCls}
-              placeholder="e.g. The Art of Managing Patient Care"
+              placeholder="Article title…"
             />
           </div>
 
@@ -223,15 +260,26 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
               value={formData.slug}
               onChange={handleChange}
               disabled={isLoading}
-              className={inputCls}
-              placeholder="auto-generated from title"
+              className={`${inputCls} font-mono text-xs`}
+              placeholder="auto-generated-from-title"
             />
-            <p className="mt-1 text-xs text-slate-400">
-              Used in the URL: /blog/<strong>{formData.slug || "slug"}</strong>
-            </p>
           </div>
 
-          {/* Author + Category — side by side */}
+          {/* Excerpt */}
+          <div>
+            <Label>Excerpt</Label>
+            <textarea
+              name="excerpt"
+              value={formData.excerpt}
+              onChange={handleChange}
+              disabled={isLoading}
+              rows={2}
+              className={`${inputCls} resize-none`}
+              placeholder="Short summary shown in listing views…"
+            />
+          </div>
+
+          {/* Author row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Author</Label>
@@ -242,11 +290,27 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
                 onChange={handleChange}
                 disabled={isLoading}
                 className={inputCls}
-                placeholder="e.g. Dr. Jane Smith"
+                placeholder="Dr. Adeyemi"
               />
             </div>
             <div>
-              <Label>Category</Label>
+              <Label>Author Title</Label>
+              <input
+                type="text"
+                name="authorTitle"
+                value={formData.authorTitle}
+                onChange={handleChange}
+                disabled={isLoading}
+                className={inputCls}
+                placeholder="Chief Psychiatrist"
+              />
+            </div>
+          </div>
+
+          {/* Category + Status */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label required>Category</Label>
               <select
                 name="category"
                 value={formData.category}
@@ -254,87 +318,61 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
                 disabled={isLoading}
                 className={inputCls}
               >
-                <option value="">— Select category —</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                <option value="">Select category…</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
-          </div>
-
-          {/* Status */}
-          <div>
-            <Label>Status</Label>
-            <div className="flex gap-2">
-              {(["draft", "published", "scheduled"] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => setFormData((p) => ({ ...p, status: s }))}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize ${
-                    formData.status === s
-                      ? s === "published"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                        : s === "scheduled"
-                          ? "bg-blue-50 text-blue-700 border-blue-300"
-                          : "bg-slate-100 text-slate-700 border-slate-300"
-                      : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Cover Image */}
-          <div>
-            <Label>Cover Image</Label>
-            <div
-              onClick={() => !isLoading && fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl transition-colors cursor-pointer ${
-                imagePreview
-                  ? "border-slate-200 p-2"
-                  : "border-slate-200 hover:border-primary/40 hover:bg-slate-50/50 p-8 flex flex-col items-center gap-2"
-              }`}
-            >
-              {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="preview"
-                  className="w-full max-h-44 object-cover rounded-lg"
-                />
-              ) : (
-                <>
-                  <UploadCloud className="w-6 h-6 text-slate-300" />
-                  <p className="text-sm text-slate-400">
-                    Click to upload cover image
-                  </p>
-                  <p className="text-xs text-slate-300">
-                    PNG, JPG, WebP up to 10MB
-                  </p>
-                </>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={handleImageChange}
-            />
-            {imagePreview && (
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="mt-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors"
+            <div>
+              <Label required>Status</Label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                disabled={isLoading}
+                className={inputCls}
               >
-                Remove image
-              </button>
-            )}
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="scheduled">Scheduled</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <Label>Tags (comma-separated)</Label>
+            <input
+              type="text"
+              name="tags"
+              value={formData.tags}
+              onChange={handleChange}
+              disabled={isLoading}
+              className={inputCls}
+              placeholder="mental health, therapy, recovery"
+            />
+          </div>
+
+          {/* Featured */}
+          <div className="flex items-center gap-3 py-1">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              name="isFeatured"
+              checked={formData.isFeatured}
+              onChange={handleChange}
+              disabled={isLoading}
+              className="w-4 h-4 accent-primary"
+            />
+            <label
+              htmlFor="isFeatured"
+              className="text-sm font-medium text-slate-700 cursor-pointer"
+            >
+              Feature this post on the homepage
+            </label>
           </div>
 
           {/* Content */}
@@ -345,61 +383,75 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
               value={formData.content}
               onChange={handleChange}
               disabled={isLoading}
-              rows={9}
-              className={`${inputCls} resize-none font-mono text-xs leading-relaxed`}
-              placeholder="Write your article content here..."
+              rows={10}
+              className={`${inputCls} resize-y font-mono text-xs`}
+              placeholder="Write your article content…"
             />
-            {formData.content.length > 0 && (
-              <p className="mt-1 text-xs text-slate-400">
-                {formData.content.split(/\s+/).filter(Boolean).length} words · ~
-                {Math.max(
-                  1,
-                  Math.round(formData.content.split(/\s+/).length / 200),
-                )}{" "}
-                min read
+            {formData.content && (
+              <p className="mt-1 text-xs text-slate-400 text-right">
+                {formData.content.split(/\s+/).filter(Boolean).length} words
               </p>
             )}
           </div>
 
-          {/* Tags */}
+          {/* Divider */}
+          <div className="border-t border-slate-100" />
+
+          {/* ── SEO & Meta ── */}
+          <SectionHeading>SEO &amp; Meta</SectionHeading>
+
           <div>
-            <Label>Tags</Label>
+            <Label>Meta Title</Label>
             <input
               type="text"
-              name="tags"
-              value={formData.tags}
+              name="metaTitle"
+              value={formData.metaTitle}
               onChange={handleChange}
               disabled={isLoading}
               className={inputCls}
-              placeholder="healthcare, clinic, tips  (comma-separated)"
+              placeholder="SEO page title…"
             />
+          </div>
+
+          <div>
+            <Label>Meta Description</Label>
+            <textarea
+              name="metaDescription"
+              value={formData.metaDescription}
+              onChange={handleChange}
+              disabled={isLoading}
+              rows={3}
+              className={`${inputCls} resize-none`}
+              placeholder="SEO description (150–160 chars recommended)…"
+            />
+            <p className="mt-1 text-xs text-slate-400 text-right">
+              {formData.metaDescription.length} / 160
+            </p>
           </div>
         </form>
 
-        {/* ── Footer actions ── */}
-        <div className="flex items-center gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/40 rounded-b-xl">
+        {/* Footer */}
+        <div className="flex items-center gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-white transition disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700 border border-slate-200 rounded-xl hover:bg-white transition disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
-            form=""
+            form="blog-post-form"
             disabled={isLoading}
-            onClick={handleSubmit}
-            className="ml-auto px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 shadow-sm"
+            className="ml-auto flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-bold rounded-xl transition disabled:opacity-50 shadow-sm"
           >
+            {isLoading && <BrandSpinner size="sm" />}
             {isLoading
               ? "Saving…"
-              : post
+              : isEditing
                 ? "Save Changes"
-                : formData.status === "published"
-                  ? "Publish Post"
-                  : "Create Post"}
+                : "Publish Post"}
           </button>
         </div>
       </div>

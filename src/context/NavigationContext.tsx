@@ -15,8 +15,9 @@ export type Section =
   | "clients"
   | "messages"
   | "analytics"
+  | "users"
   | "activity-log"
-  | "settings";
+  | "profile";
 
 export type WebsiteSubsection =
   | "overview"
@@ -79,8 +80,9 @@ const sectionLabels: Record<Section, string> = {
   clients: "Clients",
   messages: "Messages",
   analytics: "Analytics",
+  users: "User Management",
   "activity-log": "Activity Log",
-  settings: "Settings",
+  profile: "Profile",
 };
 
 // Map URL path segments → sections/subsections
@@ -97,8 +99,9 @@ function pathToSection(pathname: string): {
     "clients",
     "messages",
     "analytics",
+    "users",
     "activity-log",
-    "settings",
+    "profile",
   ];
   const validSubsections: WebsiteSubsection[] = [
     "overview",
@@ -167,8 +170,9 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         clients: "/clients",
         messages: "/messages",
         analytics: "/analytics",
+        users: "/users",
         "activity-log": "/activity-log",
-        settings: "/settings",
+        profile: "/profile",
       };
       navigate(routes[section]);
     },

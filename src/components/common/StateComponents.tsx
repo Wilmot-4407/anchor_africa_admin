@@ -1,51 +1,64 @@
-import { AlertCircle } from "lucide-react";
+// StateComponents.tsx — ANCHOR brand-styled empty/error states
+import { AlertTriangle, FolderOpen, RefreshCw } from "lucide-react";
 
-export function EmptyState({
-  title = "No Data Available",
-  description = "There's no data to display right now.",
-}: {
+interface EmptyStateProps {
   title?: string;
   description?: string;
-}) {
+  action?: React.ReactNode;
+}
+
+export function EmptyState({
+  title = "Nothing here yet",
+  description = "Get started by creating your first entry.",
+  action,
+}: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-full mb-4">
-          <AlertCircle className="w-8 h-8 text-slate-400" />
-        </div>
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">{title}</h3>
-        <p className="text-sm text-slate-600">{description}</p>
+    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-primary/8 flex items-center justify-center">
+        <FolderOpen size={28} className="text-primary/60" />
       </div>
+      <div>
+        <p className="text-base font-semibold text-slate-700">{title}</p>
+        <p className="text-sm text-slate-400 mt-1 max-w-xs mx-auto">
+          {description}
+        </p>
+      </div>
+      {action}
     </div>
   );
 }
 
-export function ErrorState({
-  title = "Something Went Wrong",
-  message = "An error occurred while loading the data. Please try again.",
-  onRetry,
-}: {
-  title?: string;
+interface ErrorStateProps {
   message?: string;
   onRetry?: () => void;
-}) {
+}
+
+export function ErrorState({
+  message = "Something went wrong.",
+  onRetry,
+}: ErrorStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-          <AlertCircle className="w-8 h-8 text-red-600" />
-        </div>
-        <h3 className="text-lg font-semibold text-red-900 mb-2">{title}</h3>
-        <p className="text-sm text-red-600 mb-4">{message}</p>
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
-          >
-            Try Again
-          </button>
-        )}
+    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center">
+        <AlertTriangle size={28} className="text-red-400" />
       </div>
+      <div>
+        <p className="text-base font-semibold text-slate-700">
+          Failed to load data
+        </p>
+        <p className="text-sm text-slate-400 mt-1 max-w-xs mx-auto">
+          {message}
+        </p>
+      </div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+        >
+          <RefreshCw size={14} />
+          Try again
+        </button>
+      )}
     </div>
   );
 }

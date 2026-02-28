@@ -1,12 +1,8 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import api from "../../utils/api";
 import { BlogPost } from "../types";
 
-// BUG FIX: The error handler in error.js returns { success: false, error: "..." }
-// using the key "error", NOT "message". All actions were reading data?.message
-// which was always undefined, so the client always saw the generic fallback
-// "Failed to fetch/create/etc." instead of the real server error.
-// Fix: read data?.error first, then fall back to data?.message for safety.
 const getErrMsg = (error: unknown, fallback: string): string => {
   const err = error as {
     response?: { data?: { error?: string; message?: string } };
@@ -18,7 +14,7 @@ export const fetchBlogPosts = createAsyncThunk(
   "blog/fetchPosts",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/blog");
+      const response = await api.get("/blog/admin/all");
       return response.data.data;
     } catch (error: unknown) {
       return rejectWithValue(getErrMsg(error, "Failed to fetch blog posts"));
@@ -42,14 +38,13 @@ export const createBlogPost = createAsyncThunk(
   "blog/createPost",
   async (data: FormData | Partial<BlogPost>, { rejectWithValue }) => {
     try {
-      // Do NOT manually set Content-Type for FormData.
-      // Axios/browser XHR automatically sets:
-      //   Content-Type: multipart/form-data; boundary=----XYZ
-      // Overriding it drops the boundary token → multer can't parse → 500.
       const response = await api.post("/blog", data);
+      toast.success("Blog post created successfully!");
       return response.data.data;
     } catch (error: unknown) {
-      return rejectWithValue(getErrMsg(error, "Failed to create blog post"));
+      const msg = getErrMsg(error, "Failed to create blog post");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -62,9 +57,12 @@ export const updateBlogPost = createAsyncThunk(
   ) => {
     try {
       const response = await api.put(`/blog/${id}`, data);
+      toast.success("Blog post updated successfully!");
       return response.data.data;
     } catch (error: unknown) {
-      return rejectWithValue(getErrMsg(error, "Failed to update blog post"));
+      const msg = getErrMsg(error, "Failed to update blog post");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -74,9 +72,12 @@ export const deleteBlogPost = createAsyncThunk(
   async (id: string, { rejectWithValue }) => {
     try {
       await api.delete(`/blog/${id}`);
+      toast.success("Blog post deleted successfully!");
       return id;
     } catch (error: unknown) {
-      return rejectWithValue(getErrMsg(error, "Failed to delete blog post"));
+      const msg = getErrMsg(error, "Failed to delete blog post");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );

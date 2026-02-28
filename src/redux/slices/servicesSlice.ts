@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import { ServiceState } from "../types";
 import {
   fetchServices,
+  fetchServicesAdmin,
   fetchService,
   createService,
   updateService,
@@ -28,7 +29,7 @@ const servicesSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch Services
+    // Fetch Services (public)
     builder.addCase(fetchServices.pending, (state) => {
       state.isLoading = true;
       state.error = null;
@@ -40,6 +41,22 @@ const servicesSlice = createSlice({
       state.error = null;
     });
     builder.addCase(fetchServices.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    });
+
+    // Fetch Services (admin — includes unpublished)
+    builder.addCase(fetchServicesAdmin.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchServicesAdmin.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.services = action.payload;
+      state.totalCount = action.payload.length;
+      state.error = null;
+    });
+    builder.addCase(fetchServicesAdmin.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
     });

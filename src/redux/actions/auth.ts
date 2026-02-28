@@ -1,5 +1,13 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import api from "../../utils/api";
+
+const getErrMsg = (error: unknown, fallback: string): string => {
+  const err = error as {
+    response?: { data?: { error?: string; message?: string } };
+  };
+  return err.response?.data?.error || err.response?.data?.message || fallback;
+};
 
 export const login = createAsyncThunk(
   "auth/login",
@@ -13,16 +21,17 @@ export const login = createAsyncThunk(
 
       if (success && token) {
         localStorage.setItem("token", token);
-        // Fetch user data after login
         const userResponse = await api.get("/auth/me");
         const user = userResponse.data.data;
         localStorage.setItem("user", JSON.stringify(user));
+        toast.success(`Welcome back, ${user.firstName || user.userName}!`);
         return { token, user };
       }
       return rejectWithValue("Login failed");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(err.response?.data?.message || "Login failed");
+      const msg = getErrMsg(error, "Invalid email or password");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -49,14 +58,14 @@ export const register = createAsyncThunk(
         const userResponse = await api.get("/auth/me");
         const user = userResponse.data.data;
         localStorage.setItem("user", JSON.stringify(user));
+        toast.success("Account created successfully!");
         return { token, user };
       }
       return rejectWithValue("Registration failed");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Registration failed",
-      );
+      const msg = getErrMsg(error, "Registration failed");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -66,13 +75,10 @@ export const getMe = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("/auth/me");
-      const user = response.data.data;
-      return user;
+      return response.data.data;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Failed to fetch user",
-      );
+      // Silent failure — token may just be expired, no toast needed
+      return rejectWithValue(getErrMsg(error, "Failed to fetch user"));
     }
   },
 );
@@ -84,10 +90,15 @@ export const logout = createAsyncThunk(
       await api.get("/auth/logout");
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      toast.success("You've been signed out.");
       return null;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(err.response?.data?.message || "Logout failed");
+      // Still clear local storage even if server call fails
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      const msg = getErrMsg(error, "Logout failed");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
@@ -100,12 +111,12 @@ export const updatePassword = createAsyncThunk(
   ) => {
     try {
       const response = await api.put("/auth/updatepassword", data);
+      toast.success("Password updated successfully!");
       return response.data.data;
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      return rejectWithValue(
-        err.response?.data?.message || "Password update failed",
-      );
+      const msg = getErrMsg(error, "Password update failed");
+      toast.error(msg);
+      return rejectWithValue(msg);
     }
   },
 );
