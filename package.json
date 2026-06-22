@@ -39,9 +39,8 @@
     "js-yaml": "^4.2.0",
     "ajv": "^6.14.0",
     "@babel/core": "^7.29.6",
-    "**/micromatch/**/picomatch": "^2.3.2",
-    "**/sucrase/**/picomatch": "^4.0.4",
-    "**/cosmiconfig/yaml": "^1.10.3",
+    "picomatch": "^2.3.2",
+    "postcss": "^8.5.15",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
