@@ -1,7 +1,11 @@
 /// <reference types="vite/client" />
 import axios, { AxiosInstance } from "axios";
-import store from "../redux/store";
-import { resetAuth } from "../redux/slices/authSlice";
+
+// Store is injected after creation in index.tsx to avoid circular imports:
+// api → store → authSlice → auth actions → api
+type StoreType = { dispatch: (action: unknown) => void };
+let _store: StoreType | null = null;
+export const injectStore = (store: StoreType) => { _store = store; };
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -46,8 +50,11 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      store.dispatch(resetAuth());
-      window.location.href = "/";
+      // Dispatch resetAuth so ProtectedRoute redirects to /
+      // Do NOT use window.location.href here — that causes an infinite
+      // reload loop because getMe() fires on every mount and returns 401
+      // when no session exists (normal on the login page)
+      _store?.dispatch({ type: "auth/resetAuth" });
     }
     return Promise.reject(error);
   },

@@ -5,6 +5,10 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { App } from "./App";
 import store from "./redux/store";
+import { injectStore } from "./utils/api";
+
+// Break circular dependency: inject store into axios interceptor after both are initialized
+injectStore(store);
 
 const rootElement = document.getElementById("root");
 if (rootElement) {
