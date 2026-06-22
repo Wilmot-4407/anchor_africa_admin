@@ -7,6 +7,9 @@ import aboutReducer from "./slices/aboutSlice";
 import faqReducer from "./slices/faqsSlice";
 import logsReducer from "./slices/logsSlice";
 import usersReducer from "./slices/usersSlice";
+import formsReducer from "./slices/formsSlice";
+import formResponsesReducer from "./slices/formResponsesSlice";
+import formAnalyticsReducer from "./slices/formAnalyticsSlice";
 import type { RootState } from "./types";
 
 const store = configureStore({
@@ -19,6 +22,9 @@ const store = configureStore({
     faqs: faqReducer,
     logs: logsReducer,
     users: usersReducer,
+    forms: formsReducer,
+    formResponses: formResponsesReducer,
+    formAnalytics: formAnalyticsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

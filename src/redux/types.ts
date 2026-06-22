@@ -288,6 +288,153 @@ export interface FaqState {
   error: string | null;
 }
 
+// ─── Campaign Forms Types ─────────────────────────────────────────────────────
+
+export type CampaignFormCategory =
+  | "Intake"
+  | "Survey"
+  | "Registration"
+  | "Contact"
+  | "Feedback"
+  | "Custom";
+
+export type CampaignFormStatus = "active" | "draft" | "archived";
+
+export type FormResponseStatus =
+  | "new"
+  | "reviewed"
+  | "followed_up"
+  | "pending"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "completed";
+
+export interface FormFieldRecord {
+  _id?: string;
+  id?: string;
+  type: string;
+  question: string;
+  helpText?: string;
+  placeholder?: string;
+  required: boolean;
+  options?: string[];
+}
+
+export interface FormSettings {
+  isPublished: boolean;
+  allowMultipleSubmissions: boolean;
+  requireAuth: boolean;
+  showProgressBar: boolean;
+  shuffleFields: boolean;
+  startDate?: string;
+  endDate?: string;
+  maxResponses?: number;
+  redirectUrl?: string;
+  submitMessage?: string;
+}
+
+export interface CampaignFormRecord {
+  _id: string;
+  title: string;
+  slug: string;
+  category: CampaignFormCategory;
+  status: CampaignFormStatus;
+  description: string;
+  fields: FormFieldRecord[];
+  settings: FormSettings;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?:
+    | string
+    | { _id: string; firstName: string; lastName: string; email: string };
+  responseCount: number;
+  fieldCount: number;
+}
+
+export interface FormAnswerRecord {
+  fieldId: string;
+  question: string;
+  type: string;
+  answer: string | string[];
+}
+
+export interface FormResponseRecord {
+  _id: string;
+  formId: string;
+  respondentName: string;
+  respondentEmail: string;
+  status: FormResponseStatus;
+  submittedAt: string;
+  ipAddress?: string;
+  answers?: FormAnswerRecord[];
+  formTitle?: string;
+}
+
+export interface FormAnalyticsDailyMetric {
+  date: string;
+  views: number;
+  responses: number;
+}
+
+export interface FormAnalyticsData {
+  formId: string;
+  formTitle: string;
+  views: number;
+  starts: number;
+  submissions: number;
+  conversionRate: number;
+  abandonmentRate: number;
+  dailyMetrics: FormAnalyticsDailyMetric[];
+  statusBreakdown: Array<{ status: string; count: number }>;
+}
+
+export interface FormsOverview {
+  totalForms: number;
+  totalViews: number;
+  totalSubmissions: number;
+  formsByStatus: { draft: number; active: number; archived: number };
+  topForms: Array<{
+    formId: string;
+    title: string;
+    slug: string;
+    category: string;
+    views: number;
+    submissions: number;
+    conversionRate: number;
+  }>;
+}
+
+export interface FormsState {
+  items: CampaignFormRecord[];
+  currentForm: CampaignFormRecord | null;
+  overview: FormsOverview | null;
+  isLoading: boolean;
+  isSaving: boolean;
+  error: string | null;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+}
+
+export interface FormResponsesState {
+  items: FormResponseRecord[];
+  currentResponse: FormResponseRecord | null;
+  isLoading: boolean;
+  isExporting: boolean;
+  error: string | null;
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  statusSummary: Record<string, number>;
+}
+
+export interface FormAnalyticsState {
+  data: FormAnalyticsData | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
 // ─── Root State ───────────────────────────────────────────────────────────────
 export interface RootState {
   auth: AuthState;
@@ -298,4 +445,7 @@ export interface RootState {
   faqs: FaqState;
   logs: LogState;
   users: UsersState;
+  forms: FormsState;
+  formResponses: FormResponsesState;
+  formAnalytics: FormAnalyticsState;
 }

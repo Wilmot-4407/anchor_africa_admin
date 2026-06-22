@@ -1,10 +1,4 @@
-/**
- * ProfileView.tsx
- * Replaces SettingsView — shows the logged-in admin's profile with
- * editable info, a change-password form, and a (disabled) reset section.
- */
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
@@ -47,15 +41,23 @@ function getInitials(firstName?: string, lastName?: string) {
   return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "?";
 }
 
-// ─── Shared styles ────────────────────────────────────────────────────────────
+function isRealAvatar(url?: string | null) {
+  return (
+    !!url &&
+    url !== "default.png" &&
+    (url.startsWith("http://") || url.startsWith("https://"))
+  );
+}
+
+// ─── Shared field styles ───────────────────────────────────────────────────────
 
 const inputCls = (hasError?: boolean) =>
-  `w-full px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 bg-white text-slate-800 placeholder:text-slate-400 transition-colors ${
-    hasError ? "border-red-300 bg-red-50" : "border-slate-200"
+  `w-full px-3.5 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent-blue/40 focus:border-accent-blue/60 bg-[#0f1a2a] text-white placeholder:text-slate-500 transition-colors ${
+    hasError ? "border-red-400/40 bg-red-500/5" : "border-white/10"
   }`;
 
 const readOnlyCls =
-  "w-full px-3.5 py-2.5 text-sm border border-slate-100 rounded-xl bg-slate-50 text-slate-600 cursor-default select-none";
+  "w-full px-3.5 py-2.5 text-sm border border-white/[0.07] rounded-xl bg-[#0f1a2a]/60 text-slate-500 cursor-default select-none";
 
 function Label({
   children,
@@ -65,12 +67,14 @@ function Label({
   required?: boolean;
 }) {
   return (
-    <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
       {children}
       {required && <span className="text-red-400 ml-0.5">*</span>}
     </label>
   );
 }
+
+// ─── Info row (read-only display) ─────────────────────────────────────────────
 
 function InfoRow({
   icon,
@@ -82,16 +86,18 @@ function InfoRow({
   value?: string | null;
 }) {
   return (
-    <div className="flex items-start gap-3 py-3.5 border-b border-slate-100 last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0 mt-0.5">
+    <div className="flex items-start gap-3 py-3 border-b border-white/[0.05] last:border-0">
+      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
         <span className="text-primary">{icon}</span>
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">
+        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">
           {label}
         </p>
-        <p className="text-sm font-medium text-slate-800 truncate">
-          {value || <span className="text-slate-400 font-normal">Not set</span>}
+        <p className="text-sm font-medium text-white truncate">
+          {value || (
+            <span className="text-slate-600 font-normal italic">Not set</span>
+          )}
         </p>
       </div>
     </div>
@@ -112,35 +118,39 @@ function SectionCard({
   title: string;
   subtitle?: string;
   icon: React.ReactNode;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   disabled?: boolean;
   disabledNote?: string;
   headerAction?: React.ReactNode;
 }) {
   return (
     <div
-      className={`bg-white rounded-xl border border-slate-200 overflow-hidden ${disabled ? "opacity-60" : ""}`}
+      className={`bg-[#1b2940] rounded-2xl border border-white/10 overflow-hidden ${
+        disabled ? "opacity-50" : ""
+      }`}
     >
-      <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0">
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
           <span className="text-primary">{icon}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold text-slate-800">{title}</h2>
+          <h2 className="text-sm font-bold text-white">{title}</h2>
           {subtitle && (
             <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
           )}
         </div>
         {disabled && disabledNote && (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-400 border border-slate-200 flex-shrink-0">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/5 text-slate-400 border border-white/10 flex-shrink-0">
             <Clock size={10} /> {disabledNote}
           </span>
         )}
         {headerAction}
       </div>
-      {children !== null && (
+      {children && (
         <div
-          className={`px-6 py-5 ${disabled ? "pointer-events-none select-none" : ""}`}
+          className={`px-6 py-5 ${
+            disabled ? "pointer-events-none select-none" : ""
+          }`}
         >
           {children}
         </div>
@@ -154,6 +164,7 @@ function SectionCard({
 export function ProfileView() {
   const dispatch = useDispatch<AppDispatch>();
   const { user, isLoading } = useSelector((state: RootState) => state.auth);
+  const isAdmin = user?.role === "admin";
 
   // ── Profile edit state ────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
@@ -169,7 +180,6 @@ export function ProfileView() {
     Partial<typeof profileForm>
   >({});
 
-  // Sync form whenever user loads or edit mode opens
   useEffect(() => {
     if (user) {
       setProfileForm({
@@ -214,7 +224,6 @@ export function ProfileView() {
           },
         }),
       ).unwrap();
-      // Refresh the auth user so header/sidebar update too
       await dispatch(getMe());
       toast.success("Profile updated successfully");
       setIsEditing(false);
@@ -272,69 +281,90 @@ export function ProfileView() {
       ).unwrap();
       setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setPwErrors({});
+      toast.success("Password updated successfully");
     } catch {
-      // toast already fired inside the thunk
+      // toast fires inside the thunk
     } finally {
       setPwSaving(false);
     }
   };
 
-  // ── Avatar ────────────────────────────────────────────────────────────────
-  const hasAvatar =
-    user?.profilePicture && user.profilePicture !== "default.png";
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const hasAvatar = isRealAvatar(user?.profilePicture);
+
+  const pwStrength =
+    pwForm.newPassword.length === 0
+      ? 0
+      : pwForm.newPassword.length < 8
+        ? 1
+        : pwForm.newPassword.length < 12
+          ? 2
+          : pwForm.newPassword.length < 16
+            ? 3
+            : 4;
+
+  const pwStrengthLabel = ["", "Weak", "Fair", "Good", "Strong"][pwStrength];
+  const pwStrengthColor = [
+    "",
+    "bg-red-400",
+    "bg-amber-400",
+    "bg-yellow-300",
+    "bg-emerald-500",
+  ][pwStrength];
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="p-8 max-w-5xl mx-auto"
+      className="p-6 lg:p-8 max-w-5xl mx-auto"
     >
       {/* ── Page header ── */}
-      <div className="mb-7 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-          <UserCog size={16} className="text-primary" />
+      <div className="mb-7 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <UserCog size={18} className="text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">My Profile</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-white">My Profile</h1>
+          <p className="text-sm text-slate-400 mt-0.5">
             View and manage your account details
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[290px_1fr] gap-6">
+
         {/* ── LEFT: Identity card ───────────────────────────────────────── */}
         <div className="space-y-4">
-          {/* Avatar + name */}
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+
+          {/* Avatar card */}
+          <div className="bg-[#1b2940] rounded-2xl border border-white/10 overflow-hidden">
+            {/* Gradient banner */}
             <div
-              className="h-20 w-full"
-              style={{
-                background: "linear-gradient(135deg, #058789 0%, #5fc4eb 100%)",
-              }}
+              className="h-24 w-full"
+              style={{ background: "linear-gradient(135deg, #058789 0%, #5fc4eb 100%)" }}
             />
-            <div className="px-6 pb-6 -mt-10">
+
+            {/* Avatar + identity */}
+            <div className="px-6 pb-6 -mt-12">
               <div className="mb-4">
                 {hasAvatar ? (
                   <img
                     src={user?.profilePicture}
                     alt={user?.firstName}
-                    className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
+                    className="w-20 h-20 rounded-full object-cover border-[3px] border-[#1b2940] shadow-xl ring-2 ring-white/10"
                   />
                 ) : (
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md"
-                    style={{
-                      background: "linear-gradient(135deg, #058789, #5fc4eb)",
-                    }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold border-[3px] border-[#1b2940] shadow-xl ring-2 ring-white/10"
+                    style={{ background: "linear-gradient(135deg, #058789, #5fc4eb)" }}
                   >
                     {getInitials(user?.firstName, user?.lastName)}
                   </div>
                 )}
               </div>
 
-              <h2 className="text-lg font-bold text-slate-800 leading-tight">
+              <h2 className="text-lg font-bold text-white leading-tight">
                 {user?.firstName} {user?.lastName}
               </h2>
               <p className="text-sm text-slate-400 mt-0.5">@{user?.userName}</p>
@@ -342,21 +372,21 @@ export function ProfileView() {
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 <span
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                    user?.role === "admin"
-                      ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                      : "bg-slate-50 text-slate-600 border-slate-200"
+                    isAdmin
+                      ? "bg-accent-blue/10 text-accent-blue border-accent-blue/20"
+                      : "bg-white/5 text-slate-400 border-white/10"
                   }`}
                 >
                   <Shield size={9} />
-                  {user?.role === "admin" ? "Admin" : "User"}
+                  {isAdmin ? "Admin" : "User"}
                 </span>
 
                 {user?.status === "active" ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <CheckCircle2 size={9} /> Active
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
                     <XCircle size={9} /> Inactive
                   </span>
                 )}
@@ -365,59 +395,42 @@ export function ProfileView() {
           </div>
 
           {/* Quick info rows */}
-          <div className="bg-white rounded-xl border border-slate-200 px-5 py-2">
-            <InfoRow
-              icon={<Mail size={14} />}
-              label="Email"
-              value={user?.email}
-            />
-            <InfoRow
-              icon={<Phone size={14} />}
-              label="Phone"
-              value={user?.phoneNumber}
-            />
-            <InfoRow
-              icon={<MapPin size={14} />}
-              label="Address"
-              value={user?.address}
-            />
-            <InfoRow
-              icon={<Calendar size={14} />}
-              label="Date of Birth"
-              value={user?.dob ? formatDate(user.dob) : null}
-            />
-            <InfoRow
-              icon={<Clock size={14} />}
-              label="Member Since"
-              value={formatDate(user?.createdAt)}
-            />
+          <div className="bg-[#1b2940] rounded-2xl border border-white/10 px-5 py-2">
+            <InfoRow icon={<Mail size={14} />} label="Email"         value={user?.email} />
+            <InfoRow icon={<Phone size={14} />} label="Phone"        value={user?.phoneNumber} />
+            <InfoRow icon={<MapPin size={14} />} label="Address"     value={user?.address} />
+            <InfoRow icon={<Calendar size={14} />} label="Date of Birth"
+              value={user?.dob ? formatDate(user.dob) : null} />
+            <InfoRow icon={<Clock size={14} />} label="Member Since" value={formatDate(user?.createdAt)} />
           </div>
         </div>
 
         {/* ── RIGHT: Action panels ──────────────────────────────────────── */}
         <div className="space-y-5">
+
           {/* ── Profile Information ── */}
           <SectionCard
             title="Profile Information"
             subtitle={
               isEditing
                 ? "Edit your personal details below"
-                : "Click 'Edit Profile' to update your personal details"
+                : isAdmin
+                  ? "Click 'Edit Profile' to update your details"
+                  : "Contact an administrator to update your profile"
             }
             icon={<User size={15} />}
             headerAction={
-              !isEditing ? (
+              isAdmin && !isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg border border-primary/15 transition-colors flex-shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 rounded-lg border border-accent-blue/20 transition-colors flex-shrink-0"
                 >
                   <Pencil size={12} /> Edit Profile
                 </button>
               ) : undefined
             }
           >
-            {isEditing ? (
-              /* ── EDIT MODE ── */
+            {isEditing && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* First name */}
@@ -426,16 +439,12 @@ export function ProfileView() {
                     <input
                       type="text"
                       value={profileForm.firstName}
-                      onChange={(e) =>
-                        profileField("firstName", e.target.value)
-                      }
+                      onChange={(e) => profileField("firstName", e.target.value)}
                       placeholder="e.g. John"
                       className={inputCls(!!profileErrors.firstName)}
                     />
                     {profileErrors.firstName && (
-                      <p className="text-[11px] text-red-500 mt-1">
-                        {profileErrors.firstName}
-                      </p>
+                      <p className="text-[11px] text-red-400 mt-1">{profileErrors.firstName}</p>
                     )}
                   </div>
 
@@ -450,9 +459,7 @@ export function ProfileView() {
                       className={inputCls(!!profileErrors.lastName)}
                     />
                     {profileErrors.lastName && (
-                      <p className="text-[11px] text-red-500 mt-1">
-                        {profileErrors.lastName}
-                      </p>
+                      <p className="text-[11px] text-red-400 mt-1">{profileErrors.lastName}</p>
                     )}
                   </div>
 
@@ -460,18 +467,14 @@ export function ProfileView() {
                   <div>
                     <Label>Username</Label>
                     <div className={readOnlyCls}>@{user?.userName || "—"}</div>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Cannot be changed by user
-                    </p>
+                    <p className="text-[11px] text-slate-600 mt-1">Cannot be changed</p>
                   </div>
 
                   {/* Email — read-only */}
                   <div>
                     <Label>Email Address</Label>
                     <div className={readOnlyCls}>{user?.email || "—"}</div>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Cannot be changed by user
-                    </p>
+                    <p className="text-[11px] text-slate-600 mt-1">Cannot be changed</p>
                   </div>
 
                   {/* Phone */}
@@ -480,10 +483,8 @@ export function ProfileView() {
                     <input
                       type="tel"
                       value={profileForm.phoneNumber}
-                      onChange={(e) =>
-                        profileField("phoneNumber", e.target.value)
-                      }
-                      placeholder="+234 800 000 0000"
+                      onChange={(e) => profileField("phoneNumber", e.target.value)}
+                      placeholder="+27 XX XXX XXXX"
                       className={inputCls()}
                     />
                   </div>
@@ -513,12 +514,12 @@ export function ProfileView() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/[0.06]">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
                     disabled={profileSaving}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/5 rounded-xl border border-white/10 transition-colors disabled:opacity-50"
                   >
                     <X size={13} /> Cancel
                   </button>
@@ -526,10 +527,7 @@ export function ProfileView() {
                     type="button"
                     onClick={handleSaveProfile}
                     disabled={profileSaving || isLoading}
-                    className="inline-flex items-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{
-                      background: "linear-gradient(135deg, #058789, #5fc4eb)",
-                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2 text-sm font-bold text-[#0f1a2a] bg-accent-blue hover:bg-[#4ab0d6] rounded-xl transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {profileSaving ? (
                       <RefreshCw size={13} className="animate-spin" />
@@ -540,7 +538,7 @@ export function ProfileView() {
                   </button>
                 </div>
               </div>
-            ) : null}
+            )}
           </SectionCard>
 
           {/* ── Change Password ── */}
@@ -550,6 +548,7 @@ export function ProfileView() {
             icon={<Lock size={15} />}
           >
             <div className="space-y-4">
+              {/* Current password */}
               <div>
                 <Label>Current Password</Label>
                 <div className="relative">
@@ -563,19 +562,18 @@ export function ProfileView() {
                   <button
                     type="button"
                     onClick={() => setShowCurrent((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                   >
                     {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
                 {pwErrors.currentPassword && (
-                  <p className="text-[11px] text-red-500 mt-1">
-                    {pwErrors.currentPassword}
-                  </p>
+                  <p className="text-[11px] text-red-400 mt-1">{pwErrors.currentPassword}</p>
                 )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* New password */}
                 <div>
                   <Label>New Password</Label>
                   <div className="relative">
@@ -589,71 +587,54 @@ export function ProfileView() {
                     <button
                       type="button"
                       onClick={() => setShowNew((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                     >
                       {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
                   {pwErrors.newPassword && (
-                    <p className="text-[11px] text-red-500 mt-1">
-                      {pwErrors.newPassword}
-                    </p>
+                    <p className="text-[11px] text-red-400 mt-1">{pwErrors.newPassword}</p>
                   )}
                 </div>
 
+                {/* Confirm password */}
                 <div>
                   <Label>Confirm New Password</Label>
                   <div className="relative">
                     <input
                       type={showConfirm ? "text" : "password"}
                       value={pwForm.confirmPassword}
-                      onChange={(e) =>
-                        pwField("confirmPassword", e.target.value)
-                      }
+                      onChange={(e) => pwField("confirmPassword", e.target.value)}
                       placeholder="Repeat new password"
                       className={`${inputCls(!!pwErrors.confirmPassword)} pr-10`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirm((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                     >
                       {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
                   {pwErrors.confirmPassword && (
-                    <p className="text-[11px] text-red-500 mt-1">
-                      {pwErrors.confirmPassword}
-                    </p>
+                    <p className="text-[11px] text-red-400 mt-1">{pwErrors.confirmPassword}</p>
                   )}
                 </div>
               </div>
 
-              {/* Strength bar */}
+              {/* Strength indicator */}
               {pwForm.newPassword && (
                 <div className="flex items-center gap-2">
-                  {[8, 12, 16].map((len) => (
+                  {[1, 2, 3, 4].map((step) => (
                     <div
-                      key={len}
-                      className={`h-1.5 flex-1 rounded-full transition-colors ${
-                        pwForm.newPassword.length >= len
-                          ? len === 8
-                            ? "bg-red-400"
-                            : len === 12
-                              ? "bg-yellow-400"
-                              : "bg-emerald-500"
-                          : "bg-slate-100"
+                      key={step}
+                      className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                        pwStrength >= step ? pwStrengthColor : "bg-white/10"
                       }`}
                     />
                   ))}
-                  <span className="text-[11px] text-slate-400 ml-1 w-12 text-right">
-                    {pwForm.newPassword.length < 8
-                      ? "Weak"
-                      : pwForm.newPassword.length < 12
-                        ? "Fair"
-                        : pwForm.newPassword.length < 16
-                          ? "Good"
-                          : "Strong"}
+                  <span className="text-[11px] text-slate-500 ml-1 w-14 text-right shrink-0">
+                    {pwStrengthLabel}
                   </span>
                 </div>
               )}
@@ -663,10 +644,7 @@ export function ProfileView() {
                   type="button"
                   onClick={handleChangePassword}
                   disabled={pwSaving || isLoading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{
-                    background: "linear-gradient(135deg, #058789, #5fc4eb)",
-                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-[#0f1a2a] bg-accent-blue hover:bg-[#4ab0d6] rounded-xl transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {pwSaving ? (
                     <RefreshCw size={14} className="animate-spin" />
@@ -679,7 +657,7 @@ export function ProfileView() {
             </div>
           </SectionCard>
 
-          {/* ── Reset Password via Email (disabled) ── */}
+          {/* ── Reset via Email (coming soon) ── */}
           <SectionCard
             title="Reset Password via Email"
             subtitle="Send a password reset link to your registered email address"
@@ -688,20 +666,20 @@ export function ProfileView() {
             disabledNote="Coming Soon"
           >
             <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                  <Mail size={14} className="text-slate-400" />
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                  <Mail size={14} className="text-slate-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-600">
+                  <p className="text-sm font-semibold text-slate-400">
                     Reset link destination
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {user?.email || "your registered email"}
                   </p>
                 </div>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 A secure reset link will be sent to your registered email. The
                 link expires after 10 minutes.
               </p>
@@ -709,10 +687,7 @@ export function ProfileView() {
                 <button
                   type="button"
                   disabled
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl cursor-not-allowed opacity-50"
-                  style={{
-                    background: "linear-gradient(135deg, #058789, #5fc4eb)",
-                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-[#0f1a2a] bg-accent-blue rounded-xl cursor-not-allowed opacity-40"
                 >
                   <Mail size={14} /> Send Reset Link
                 </button>

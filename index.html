@@ -7,6 +7,13 @@
     <title>ANCHOR Africa Admin Panel</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/assets/images/logo/favicon.png" />
+    <!-- Apply saved theme before first paint to prevent flash -->
+    <script>
+      (function () {
+        var t = localStorage.getItem('anchor-theme') || 'dark';
+        document.documentElement.classList.add(t);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
