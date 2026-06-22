@@ -19,17 +19,18 @@ export function FormPreview({ title, description, fields }: FormPreviewProps) {
         {description && <p className="text-slate-300">{description}</p>}
       </div>
 
-      <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+      <form className="grid grid-cols-2 gap-6" onSubmit={(e) => e.preventDefault()}>
         {fields.map((field) => {
           if (field.type === 'heading') {
             return (
-              <h2 key={field.id} className="text-xl font-bold text-white pt-4 border-b border-white/10 pb-2">
+              <h2 key={field.id} className="col-span-2 text-xl font-bold text-white pt-4 border-b border-white/10 pb-2">
                 {field.question}
               </h2>
             );
           }
+          const colClass = field.colSpan === 1 ? 'col-span-1' : 'col-span-2';
           return (
-            <div key={field.id} className="bg-[#1b2940] rounded-2xl border border-white/10 p-6">
+            <div key={field.id} className={`${colClass} bg-[#1b2940] rounded-2xl border border-white/10 p-6`}>
               <label className="block text-base font-medium text-white mb-1">
                 {field.question} {field.required && <span className="text-red-400">*</span>}
               </label>
@@ -115,7 +116,7 @@ export function FormPreview({ title, description, fields }: FormPreviewProps) {
 
         <button
           type="submit"
-          className="bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-accent-blue/20"
+          className="col-span-2 bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-accent-blue/20"
         >
           Submit
         </button>

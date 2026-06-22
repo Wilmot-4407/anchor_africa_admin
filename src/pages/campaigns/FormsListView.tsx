@@ -86,6 +86,7 @@ export function FormsListView() {
   const [categoryFilter, setCategoryFilter] = useState<CampaignFormCategory | 'all'>('all');
   const [page, setPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [deleteTarget, setDeleteTarget] = useState<CampaignFormRecord | null>(null);
 
   // Debounce search
@@ -351,45 +352,24 @@ export function FormsListView() {
                           </button>
                           <div className="relative">
                             <button
-                              onClick={() => setMenuOpen(menuOpen === form._id ? null : form._id)}
+                              onClick={(e) => {
+                                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                if (menuOpen === form._id) {
+                                  setMenuOpen(null);
+                                } else {
+                                  const MENU_HEIGHT = 138;
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  const top = spaceBelow < MENU_HEIGHT + 10
+                                    ? rect.top - MENU_HEIGHT - 6
+                                    : rect.bottom + 6;
+                                  setMenuPos({ top, right: window.innerWidth - rect.right });
+                                  setMenuOpen(form._id);
+                                }
+                              }}
                               className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                             >
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
-                            <AnimatePresence>
-                              {menuOpen === form._id && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                                  transition={{ duration: 0.12 }}
-                                  className="absolute right-0 top-full mt-1 w-44 bg-[#0f1a2a] border border-white/10 rounded-xl shadow-2xl z-20 py-1"
-                                >
-                                  <button
-                                    onClick={() => handleDuplicate(form)}
-                                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
-                                  >
-                                    <Copy className="w-4 h-4" /> Duplicate
-                                  </button>
-                                  <button
-                                    onClick={() => handleArchiveToggle(form)}
-                                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
-                                  >
-                                    {form.status === 'archived'
-                                      ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</>
-                                      : <><Archive className="w-4 h-4" /> Archive</>
-                                    }
-                                  </button>
-                                  <div className="h-px bg-white/10 my-1" />
-                                  <button
-                                    onClick={() => handleDelete(form)}
-                                    className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-400/10 transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4" /> Delete
-                                  </button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
                           </div>
                         </div>
                       </td>
@@ -468,8 +448,49 @@ export function FormsListView() {
         )}
       </AnimatePresence>
 
-      {/* Backdrop to close context menu */}
-      {menuOpen && <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />}
+      {/* Context menu — fixed so it escapes overflow-x-auto clipping */}
+      <AnimatePresence>
+        {menuOpen && (() => {
+          const form = items.find(f => f._id === menuOpen);
+          if (!form) return null;
+          return (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                transition={{ duration: 0.12 }}
+                className="fixed w-44 bg-[#0f1a2a] border border-white/10 rounded-xl shadow-2xl z-50 py-1"
+                style={{ top: menuPos.top, right: menuPos.right }}
+              >
+                <button
+                  onClick={() => handleDuplicate(form)}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                >
+                  <Copy className="w-4 h-4" /> Duplicate
+                </button>
+                <button
+                  onClick={() => handleArchiveToggle(form)}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                >
+                  {form.status === 'archived'
+                    ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</>
+                    : <><Archive className="w-4 h-4" /> Archive</>
+                  }
+                </button>
+                <div className="h-px bg-white/10 my-1" />
+                <button
+                  onClick={() => handleDelete(form)}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-red-400/10 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+              </motion.div>
+            </>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 }

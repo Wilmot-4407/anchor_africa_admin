@@ -60,9 +60,16 @@ export function SignInView() {
             <motion.div
               key={i}
               className="absolute rounded-full border border-accent-blue/10"
-              style={{ width: `${360 + i * 220}px`, height: `${360 + i * 220}px` }}
+              style={{
+                width: `${360 + i * 220}px`,
+                height: `${360 + i * 220}px`,
+              }}
               animate={{ scale: [1, 1.06, 1], opacity: [0.5, 0.2, 0.5] }}
-              transition={{ duration: 6 + i * 2, repeat: Infinity, ease: "easeInOut" }}
+              transition={{
+                duration: 6 + i * 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
             />
           ))}
         </div>
@@ -82,7 +89,9 @@ export function SignInView() {
           <div className="w-14 h-14 bg-accent-blue rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-accent-blue/30">
             <Anchor className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">ANCHOR Africa</h1>
+          <h1 className="text-3xl font-bold text-white mb-1 tracking-tight">
+            ANCHOR Africa
+          </h1>
           <p className="text-accent-blue text-sm font-medium text-center">
             Mental &amp; Behavioral Health Administration
           </p>
@@ -90,7 +99,9 @@ export function SignInView() {
 
         <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300 ml-1">Email Address</label>
+            <label className="text-sm font-medium text-slate-300 ml-1">
+              Email Address
+            </label>
             <input
               type="email"
               value={email}
@@ -102,7 +113,9 @@ export function SignInView() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-300 ml-1">Password</label>
+            <label className="text-sm font-medium text-slate-300 ml-1">
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -117,16 +130,20 @@ export function SignInView() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
 
-          <div className="flex justify-end">
+          {/* <div className="flex justify-end">
             <a href="#" className="text-sm font-medium text-accent-blue hover:text-white transition-colors">
               Forgot password?
             </a>
-          </div>
+          </div> */}
 
           {error && (
             <p className="text-red-400 text-sm text-center bg-red-400/10 border border-red-400/20 rounded-xl px-4 py-2">
@@ -143,12 +160,12 @@ export function SignInView() {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-slate-400">
+        {/* <div className="mt-6 text-center text-sm text-slate-400">
           Don&apos;t have an account?{" "}
           <a href="#" className="text-accent-blue hover:text-white font-medium transition-colors">
             Contact Administrator
           </a>
-        </div>
+        </div> */}
       </motion.div>
     </div>
   );

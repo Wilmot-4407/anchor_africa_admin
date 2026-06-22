@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, Pencil, Check, ChevronUp, ChevronDown, GripVertical,
-  Trash2, Copy, Star, AlertCircle, Loader2,
+  Trash2, Copy, Star, AlertCircle, Loader2, Columns2, RectangleHorizontal,
 } from 'lucide-react';
 import { fieldTypeMap, createField, type FormField, type FieldType } from '../../data/formFieldTypes';
 import { FieldPalette } from '../forms/FieldPalette';
@@ -35,6 +35,7 @@ interface CanvasCardProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onMove: (dir: 'up' | 'down') => void;
+  onWidthChange: (colSpan: 1 | 2) => void;
 }
 
 function FieldActions({ onDelete, onDuplicate }: { onDelete: () => void; onDuplicate: () => void }) {
@@ -59,9 +60,11 @@ function FieldActions({ onDelete, onDuplicate }: { onDelete: () => void; onDupli
 }
 
 function CanvasFieldCard({
-  field, index, total, isActive, onActivate, onDelete, onDuplicate, onMove,
+  field, index, total, isActive, onActivate, onDelete, onDuplicate, onMove, onWidthChange,
 }: CanvasCardProps) {
   const meta = fieldTypeMap[field.type];
+  const [layoutMenu, setLayoutMenu] = useState(false);
+  const colSpan = field.colSpan ?? 2;
 
   return (
     <div
@@ -76,7 +79,7 @@ function CanvasFieldCard({
         <div className="absolute -left-px top-0 bottom-0 w-1 bg-accent-blue rounded-l-2xl" />
       )}
 
-      {/* Reorder rail */}
+      {/* Reorder + layout rail */}
       <div className="absolute left-0 top-0 bottom-0 w-10 flex flex-col items-center justify-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           onClick={e => { e.stopPropagation(); onMove('up'); }}
@@ -85,7 +88,48 @@ function CanvasFieldCard({
         >
           <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
         </button>
-        <GripVertical className="w-3.5 h-3.5 text-slate-600" />
+        <div className="relative">
+          <button
+            onClick={e => { e.stopPropagation(); setLayoutMenu(v => !v); }}
+            title="Column width"
+            className="p-1 hover:bg-white/10 rounded transition-colors"
+          >
+            <GripVertical className="w-3.5 h-3.5 text-slate-500 hover:text-slate-300 transition-colors" />
+          </button>
+          <AnimatePresence>
+            {layoutMenu && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={e => { e.stopPropagation(); setLayoutMenu(false); }} />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.1 }}
+                  className="absolute left-9 top-1/2 -translate-y-1/2 bg-[#0f1a2a] border border-white/10 rounded-xl shadow-xl z-20 p-2 w-36"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <p className="text-[10px] text-slate-500 px-1.5 mb-1.5 font-semibold uppercase tracking-wide">Width</p>
+                  <button
+                    onClick={() => { onWidthChange(2); setLayoutMenu(false); }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
+                      colSpan === 2 ? 'text-accent-blue bg-accent-blue/10' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <RectangleHorizontal className="w-3.5 h-3.5 shrink-0" /> Full width
+                  </button>
+                  <button
+                    onClick={() => { onWidthChange(1); setLayoutMenu(false); }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors ${
+                      colSpan === 1 ? 'text-accent-blue bg-accent-blue/10' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Columns2 className="w-3.5 h-3.5 shrink-0" /> Half width
+                  </button>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
         <button
           onClick={e => { e.stopPropagation(); onMove('down'); }}
           disabled={index === total - 1}
@@ -166,8 +210,15 @@ export function FormBuilderCore({
   const [activeId, setActiveId] = useState<string | null>(initialFields[0]?.id ?? null);
   const [preview, setPreview] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const isFirstRender = useRef(true);
 
   const activeField = fields.find(f => f.id === activeId) ?? null;
+
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    setIsDirty(true);
+  }, [title, description, fields]);
 
   const addField = (type: FieldType) => {
     const field = createField(type);
@@ -211,6 +262,7 @@ export function FormBuilderCore({
     });
 
   const handleSave = (status: 'draft' | 'active' = 'draft') => {
+    setIsDirty(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
     onSave?.({ title, description, fields, status });
@@ -263,8 +315,8 @@ export function FormBuilderCore({
           </div>
           <button
             onClick={() => handleSave('draft')}
-            disabled={isSaving}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-200 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSaving || !isDirty}
+            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-200 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSaving
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
@@ -274,8 +326,8 @@ export function FormBuilderCore({
           </button>
           <button
             onClick={() => handleSave('active')}
-            disabled={isSaving}
-            className="bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            disabled={isSaving || !isDirty}
+            className="bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             {isSaving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> : publishLabel}
           </button>
@@ -294,9 +346,9 @@ export function FormBuilderCore({
 
           {/* Center canvas */}
           <div className="flex-1 overflow-y-auto scrollbar-brand min-w-0">
-            <div className="max-w-2xl mx-auto space-y-3 pb-20">
-              {/* Form header card */}
-              <div className="bg-[#1b2940] rounded-2xl border-t-[6px] border-t-accent-blue border-x border-b border-white/10 p-6">
+            <div className="max-w-2xl mx-auto grid grid-cols-2 gap-3 pb-20">
+              {/* Form header card — always full width */}
+              <div className="col-span-2 bg-[#1b2940] rounded-2xl border-t-[6px] border-t-accent-blue border-x border-b border-white/10 p-6">
                 <input
                   value={title}
                   onChange={e => setTitle(e.target.value)}
@@ -314,31 +366,36 @@ export function FormBuilderCore({
 
               {/* Fields */}
               <AnimatePresence initial={false}>
-                {fields.map((field, index) => (
-                  <motion.div
-                    key={field.id}
-                    layout
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.98 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <CanvasFieldCard
-                      field={field}
-                      index={index}
-                      total={fields.length}
-                      isActive={activeId === field.id}
-                      onActivate={() => setActiveId(field.id)}
-                      onDelete={() => deleteField(field.id)}
-                      onDuplicate={() => duplicateField(field)}
-                      onMove={dir => moveField(index, dir)}
-                    />
-                  </motion.div>
-                ))}
+                {fields.map((field, index) => {
+                  const span = field.type === 'heading' ? 2 : (field.colSpan ?? 2);
+                  return (
+                    <motion.div
+                      key={field.id}
+                      layout
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className={span === 1 ? 'col-span-1' : 'col-span-2'}
+                    >
+                      <CanvasFieldCard
+                        field={field}
+                        index={index}
+                        total={fields.length}
+                        isActive={activeId === field.id}
+                        onActivate={() => setActiveId(field.id)}
+                        onDelete={() => deleteField(field.id)}
+                        onDuplicate={() => duplicateField(field)}
+                        onMove={dir => moveField(index, dir)}
+                        onWidthChange={colSpan => updateField(field.id, { colSpan })}
+                      />
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
 
               {fields.length === 0 && (
-                <div className="bg-[#1b2940] rounded-2xl border border-dashed border-white/15 p-12 text-center">
+                <div className="col-span-2 bg-[#1b2940] rounded-2xl border border-dashed border-white/15 p-12 text-center">
                   <AlertCircle className="w-8 h-8 text-slate-600 mx-auto mb-3" />
                   <p className="font-medium text-slate-300 mb-1">No fields yet</p>
                   <p className="text-sm text-slate-500">Pick a field type from the left panel to start building</p>

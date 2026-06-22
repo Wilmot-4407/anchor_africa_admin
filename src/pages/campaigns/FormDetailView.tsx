@@ -188,12 +188,14 @@ export function FormDetailView() {
                 Publish
               </button>
             )}
-            <button
-              onClick={() => switchTab('builder')}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <Edit2 className="w-3.5 h-3.5" /> Edit Form
-            </button>
+            {activeTab !== 'builder' && (
+              <button
+                onClick={() => switchTab('builder')}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <Edit2 className="w-3.5 h-3.5" /> Edit Form
+              </button>
+            )}
           </div>
         </div>
 

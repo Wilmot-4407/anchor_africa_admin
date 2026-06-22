@@ -73,6 +73,7 @@ export interface FormField {
   placeholder?: string;
   required: boolean;
   options?: string[];
+  colSpan?: 1 | 2;
 }
 
 export function makeFieldId() {
