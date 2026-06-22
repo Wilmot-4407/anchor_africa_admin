@@ -2,13 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 import api from "../../utils/api";
 
-const getErrMsg = (error: unknown, fallback: string): string => {
-  const err = error as {
-    response?: { data?: { error?: string; message?: string } };
-  };
-  return err.response?.data?.error || err.response?.data?.message || fallback;
-};
-
 export const login = createAsyncThunk(
   "auth/login",
   async (
@@ -17,19 +10,19 @@ export const login = createAsyncThunk(
   ) => {
     try {
       const response = await api.post("/auth/login", credentials);
-      const { token, success } = response.data;
+      const { success } = response.data;
 
-      if (success && token) {
-        localStorage.setItem("token", token);
+      if (success) {
+        // httpOnly cookie is now set by the server — no token in response body
         const userResponse = await api.get("/auth/me");
         const user = userResponse.data.data;
-        localStorage.setItem("user", JSON.stringify(user));
         toast.success(`Welcome back, ${user.firstName || user.userName}!`);
-        return { token, user };
+        return { user };
       }
       return rejectWithValue("Login failed");
-    } catch (error: unknown) {
-      const msg = getErrMsg(error, "Invalid email or password");
+    } catch {
+      // Generic message to avoid leaking whether email exists
+      const msg = "Invalid email or password";
       toast.error(msg);
       return rejectWithValue(msg);
     }
@@ -51,19 +44,18 @@ export const register = createAsyncThunk(
   ) => {
     try {
       const response = await api.post("/auth/register", userData);
-      const { token, success } = response.data;
+      const { success } = response.data;
 
-      if (success && token) {
-        localStorage.setItem("token", token);
+      if (success) {
         const userResponse = await api.get("/auth/me");
         const user = userResponse.data.data;
-        localStorage.setItem("user", JSON.stringify(user));
         toast.success("Account created successfully!");
-        return { token, user };
+        return { user };
       }
       return rejectWithValue("Registration failed");
     } catch (error: unknown) {
-      const msg = getErrMsg(error, "Registration failed");
+      const err = error as { response?: { data?: { error?: string } } };
+      const msg = err.response?.data?.error || "Registration failed";
       toast.error(msg);
       return rejectWithValue(msg);
     }
@@ -76,9 +68,8 @@ export const getMe = createAsyncThunk(
     try {
       const response = await api.get("/auth/me");
       return response.data.data;
-    } catch (error: unknown) {
-      // Silent failure — token may just be expired, no toast needed
-      return rejectWithValue(getErrMsg(error, "Failed to fetch user"));
+    } catch {
+      return rejectWithValue("Session expired");
     }
   },
 );
@@ -88,17 +79,12 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await api.get("/auth/logout");
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
       toast.success("You've been signed out.");
       return null;
-    } catch (error: unknown) {
-      // Still clear local storage even if server call fails
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      const msg = getErrMsg(error, "Logout failed");
-      toast.error(msg);
-      return rejectWithValue(msg);
+    } catch {
+      // Even if the server call fails, the local state will be cleared
+      // by logout.rejected in the slice
+      return rejectWithValue("Logout failed");
     }
   },
 );
@@ -114,7 +100,8 @@ export const updatePassword = createAsyncThunk(
       toast.success("Password updated successfully!");
       return response.data.data;
     } catch (error: unknown) {
-      const msg = getErrMsg(error, "Password update failed");
+      const err = error as { response?: { data?: { error?: string } } };
+      const msg = err.response?.data?.error || "Password update failed";
       toast.error(msg);
       return rejectWithValue(msg);
     }

@@ -4,8 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence } from "framer-motion";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { jwtDecode } from "jwt-decode";
-import { logout, getMe } from "./redux/actions/auth";
+import { getMe } from "./redux/actions/auth";
 import { AppDispatch, RootState } from "./redux/store";
 import { NavigationProvider } from "./context/NavigationContext";
 import { Sidebar } from "./components/layout/Sidebar";
@@ -88,8 +87,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
-  if (isLoading) return <PageLoader />;
+  const { isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
+  if (!isInitialized) return <PageLoader />;
   return isAuthenticated ? (
     <NavigationProvider>{children}</NavigationProvider>
   ) : (
@@ -99,22 +98,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export function App() {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, token } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, isInitialized } = useSelector((state: RootState) => state.auth);
 
+  // On every mount, validate the session via the httpOnly cookie.
+  // getMe resolves immediately if cookie is valid; rejects if not.
   useEffect(() => {
-    if (token) {
-      try {
-        const decoded = jwtDecode<{ exp: number }>(token);
-        if (decoded.exp < Date.now() / 1000) {
-          dispatch(logout());
-        } else {
-          dispatch(getMe());
-        }
-      } catch {
-        dispatch(logout());
-      }
-    }
-  }, [dispatch, token]);
+    dispatch(getMe());
+  }, [dispatch]);
 
   return (
     <>
@@ -142,7 +132,10 @@ export function App() {
         {/* Public */}
         <Route
           path="/"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignInView />}
+          element={
+            !isInitialized ? <PageLoader /> :
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <SignInView />
+          }
         />
 
         {/* Standalone pages (own Sidebar + Topbar) */}

@@ -10,10 +10,11 @@ import {
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem("token") || null,
+  token: null,
   isLoading: false,
   error: null,
-  isAuthenticated: !!localStorage.getItem("token"),
+  isAuthenticated: false,
+  isInitialized: false,
 };
 
 const authSlice = createSlice({
@@ -27,6 +28,7 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.isInitialized = true;
       state.error = null;
     },
   },
@@ -39,14 +41,16 @@ const authSlice = createSlice({
     builder.addCase(login.fulfilled, (state, action) => {
       state.isLoading = false;
       state.user = action.payload.user;
-      state.token = action.payload.token;
+      state.token = null;
       state.isAuthenticated = true;
+      state.isInitialized = true;
       state.error = null;
     });
     builder.addCase(login.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
       state.isAuthenticated = false;
+      state.isInitialized = true;
     });
 
     // Register
@@ -57,29 +61,36 @@ const authSlice = createSlice({
     builder.addCase(register.fulfilled, (state, action) => {
       state.isLoading = false;
       state.user = action.payload.user;
-      state.token = action.payload.token;
+      state.token = null;
       state.isAuthenticated = true;
+      state.isInitialized = true;
       state.error = null;
     });
     builder.addCase(register.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
+      state.isInitialized = true;
     });
 
-    // Get Current User
+    // Get Current User — primary session check on app load
     builder.addCase(getMe.pending, (state) => {
       state.isLoading = true;
     });
     builder.addCase(getMe.fulfilled, (state, action) => {
       state.isLoading = false;
       state.user = action.payload;
+      state.isAuthenticated = true;
+      state.isInitialized = true;
     });
-    builder.addCase(getMe.rejected, (state, action) => {
+    builder.addCase(getMe.rejected, (state) => {
       state.isLoading = false;
-      state.error = action.payload as string;
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.isInitialized = true;
     });
 
-    // Logout
+    // Logout — always clear state regardless of server response
     builder.addCase(logout.pending, (state) => {
       state.isLoading = true;
     });
@@ -90,9 +101,12 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     });
-    builder.addCase(logout.rejected, (state, action) => {
+    builder.addCase(logout.rejected, (state) => {
       state.isLoading = false;
-      state.error = action.payload as string;
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.error = null;
     });
 
     // Update Password

@@ -73,6 +73,7 @@ export function FormDetailView() {
       options: f.options,
       helpText: f.helpText,
       placeholder: f.placeholder,
+      colSpan: f.colSpan as 1 | 2 | undefined,
     })),
     [currentForm?.fields],
   );
