@@ -31,6 +31,9 @@
     "redux-persist": "^6.0.0",
     "redux-thunk": "^3.1.0"
   },
+  "resolutions": {
+    "form-data": "^4.0.6"
+  },
   "devDependencies": {
     "@types/node": "^20.11.18",
     "@types/react": "^18.3.1",
