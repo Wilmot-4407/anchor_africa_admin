@@ -328,7 +328,7 @@ function ImageUploadField({
         <label className="flex items-center gap-3 w-full cursor-pointer bg-[#0f1a2a] border border-white/10 rounded-xl px-4 py-3 hover:border-accent-blue/50 transition-all">
           <Upload className="w-4 h-4 text-slate-400 shrink-0" />
           <span className="text-sm text-slate-400">
-            {previewUrl ? 'Change image' : realCurrent ? 'Replace current image' : 'Upload image to Cloudinary'}
+            {previewUrl ? 'Change image' : realCurrent ? 'Replace current image' : 'Upload image'}
           </span>
           <input
             type="file"

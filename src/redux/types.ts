@@ -122,6 +122,7 @@ export interface BlogPost {
   image: string;
   imageAlt?: string;
   author?: string;
+  authorAvatar?: string;
   authorTitle?: string;
   date: string;
   publishedAt?: string;

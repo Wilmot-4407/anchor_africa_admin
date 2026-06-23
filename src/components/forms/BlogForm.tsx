@@ -117,6 +117,8 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(post?.image || "");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>(post?.authorAvatar || "");
   const [step, setStep] = useState(0);
   const [formError, setFormError] = useState("");
 
@@ -137,6 +139,13 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const validateStep = (s: number): boolean => {
@@ -173,6 +182,7 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
       }
     });
     if (imageFile) fd.append("image", imageFile);
+    if (avatarFile) fd.append("authorAvatar", avatarFile);
 
     try {
       if (post?._id) {
@@ -279,6 +289,27 @@ export function BlogForm({ post, onClose, onSuccess }: BlogFormProps) {
                   <Label>Author Title</Label>
                   <input type="text" name="authorTitle" value={formData.authorTitle} onChange={handleChange} disabled={isLoading} className={inputCls} placeholder="Chief Psychiatrist" />
                 </div>
+              </div>
+
+              {/* Author avatar */}
+              <div>
+                <Label>Author Avatar</Label>
+                <input id="blog-avatar" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                <label htmlFor="blog-avatar" className="flex items-center gap-4 cursor-pointer group">
+                  <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center bg-slate-50 group-hover:border-primary/50 transition-colors shrink-0">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Author avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <UploadCloud className="w-5 h-5 text-slate-300" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 group-hover:text-primary transition-colors">
+                      {avatarPreview ? "Click to change avatar" : "Click to upload author photo"}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">JPG, PNG, WEBP — shown next to author name</p>
+                  </div>
+                </label>
               </div>
             </>
           )}
