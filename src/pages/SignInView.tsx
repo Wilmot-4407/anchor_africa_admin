@@ -154,7 +154,8 @@ export function SignInView() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-accent-blue hover:bg-[#4ab0d6] disabled:opacity-60 disabled:cursor-not-allowed text-[#0f1a2a] font-bold rounded-xl py-3 mt-1 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent-blue/20"
+            className="w-full bg-accent-blue hover:bg-[#4ab0d6] disabled:opacity-60 disabled:cursor-not-allowed text-[#0f1a2a] font-bold rounded-xl py-3 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent-blue/20"
+            style={{ marginTop: "2rem" }}
           >
             {isLoading ? "Signing in…" : "Sign In"}
           </button>

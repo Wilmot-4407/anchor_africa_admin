@@ -137,7 +137,12 @@ export function ActivityLogView() {
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-400 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
           title="Refresh"
         >
-          <RefreshCwIcon size={13} className={isLoading ? "animate-spin" : ""} />
+          {isLoading ? (
+            <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+              <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+              <span className="absolute inset-0 rounded-full bg-current" />
+            </span>
+          ) : <RefreshCwIcon size={13} />}
           Refresh
         </button>
       </div>

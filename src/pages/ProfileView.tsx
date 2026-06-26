@@ -530,7 +530,10 @@ export function ProfileView() {
                     className="inline-flex items-center gap-2 px-5 py-2 text-sm font-bold text-[#0f1a2a] bg-accent-blue hover:bg-[#4ab0d6] rounded-xl transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {profileSaving ? (
-                      <RefreshCw size={13} className="animate-spin" />
+                      <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                        <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                        <span className="absolute inset-0 rounded-full bg-current" />
+                      </span>
                     ) : (
                       <CheckIcon size={13} />
                     )}
@@ -647,7 +650,10 @@ export function ProfileView() {
                   className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-[#0f1a2a] bg-accent-blue hover:bg-[#4ab0d6] rounded-xl transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {pwSaving ? (
-                    <RefreshCw size={14} className="animate-spin" />
+                    <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                      <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                      <span className="absolute inset-0 rounded-full bg-current" />
+                    </span>
                   ) : (
                     <CheckIcon size={14} />
                   )}

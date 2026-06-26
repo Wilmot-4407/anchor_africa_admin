@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Hammer, InboxIcon, BarChart3, Share2, FileText,
-  Edit2, Globe, AlertTriangle, Loader2,
+  Edit2, Globe, AlertTriangle,
 } from 'lucide-react';
 import type { AppDispatch, RootState } from '../../redux/store';
 import type { FieldType } from '../../data/formFieldTypes';
@@ -102,7 +102,12 @@ export function FormDetailView() {
   if (isLoading && !currentForm) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
-        <Loader2 className="w-8 h-8 text-accent-blue animate-spin" />
+        <div role="status" className="relative w-10 h-10">
+          <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-75" />
+          <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-50 [animation-delay:200ms]" />
+          <div className="absolute inset-0 rounded-full bg-accent-blue/80" />
+          <span className="sr-only">Loading…</span>
+        </div>
         <p className="text-slate-400 text-sm">Loading form…</p>
       </div>
     );
@@ -185,7 +190,12 @@ export function FormDetailView() {
                 disabled={isSaving}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 hover:bg-emerald-400/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+                {isSaving ? (
+                  <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                    <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                    <span className="absolute inset-0 rounded-full bg-current" />
+                  </span>
+                ) : <Globe className="w-3.5 h-3.5" />}
                 Publish
               </button>
             )}

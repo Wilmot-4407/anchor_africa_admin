@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area,
 } from 'recharts';
-import { Eye, Users, TrendingUp, Clock, Activity, Loader2 } from 'lucide-react';
+import { Eye, Users, TrendingUp, Clock, Activity } from 'lucide-react';
 import type { AppDispatch, RootState } from '../../redux/store';
 import { fetchFormAnalytics } from '../../redux/actions/formAnalytics';
 
@@ -42,7 +42,12 @@ export function AnalyticsCards({ formId }: AnalyticsCardsProps) {
   if (isLoading || !analytics) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Loader2 className="w-6 h-6 text-accent-blue animate-spin mb-3" />
+        <div role="status" className="relative w-8 h-8 mb-3">
+          <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-75" />
+          <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-50 [animation-delay:200ms]" />
+          <div className="absolute inset-0 rounded-full bg-accent-blue/80" />
+          <span className="sr-only">Loading…</span>
+        </div>
         <p className="text-slate-500 text-sm">Loading analytics…</p>
       </div>
     );

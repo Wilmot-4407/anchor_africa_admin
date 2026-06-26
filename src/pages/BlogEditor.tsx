@@ -311,7 +311,12 @@ function DeleteModal({
             disabled={isDeleting}
             className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {isDeleting && <RefreshCw size={13} className="animate-spin" />}
+            {isDeleting && (
+              <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                <span className="absolute inset-0 rounded-full bg-current" />
+              </span>
+            )}
             Delete
           </button>
         </div>

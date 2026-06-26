@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Eye, Edit2, Copy, Archive, Trash2, MoreHorizontal,
   FileText, TrendingUp, CheckCircle, Clock, ChevronLeft, ChevronRight,
-  Users, AlertTriangle, ArchiveRestore, Loader2,
+  Users, AlertTriangle, ArchiveRestore,
 } from 'lucide-react';
 import type { AppDispatch, RootState } from '../../redux/store';
 import type { CampaignFormRecord, CampaignFormStatus, CampaignFormCategory } from '../../redux/types';
@@ -276,7 +276,12 @@ export function FormsListView() {
               {isLoading && items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-16 text-center">
-                    <Loader2 className="w-6 h-6 text-accent-blue animate-spin mx-auto mb-3" />
+                    <div role="status" className="relative w-8 h-8 mb-3 mx-auto">
+                      <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-75" />
+                      <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-50 [animation-delay:200ms]" />
+                      <div className="absolute inset-0 rounded-full bg-accent-blue/80" />
+                      <span className="sr-only">Loading…</span>
+                    </div>
                     <p className="text-slate-500 text-sm">Loading forms…</p>
                   </td>
                 </tr>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, Pencil, Check, ChevronUp, ChevronDown, GripVertical,
-  Trash2, Copy, Star, AlertCircle, Loader2, Columns2, RectangleHorizontal,
+  Trash2, Copy, Star, AlertCircle, Columns2, RectangleHorizontal,
 } from 'lucide-react';
 import { fieldTypeMap, createField, type FormField, type FieldType } from '../../data/formFieldTypes';
 import { FieldPalette } from '../forms/FieldPalette';
@@ -319,7 +319,7 @@ export function FormBuilderCore({
             className="px-4 py-2 rounded-xl text-xs font-medium text-slate-200 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSaving
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+              ? <><span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0"><span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" /><span className="absolute inset-0 rounded-full bg-current" /></span> Saving…</>
               : saved
               ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Saved</>
               : saveLabel}
@@ -329,7 +329,7 @@ export function FormBuilderCore({
             disabled={isSaving || !isDirty}
             className="bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-accent-blue/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
-            {isSaving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> : publishLabel}
+            {isSaving ? <><span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0"><span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" /><span className="absolute inset-0 rounded-full bg-current" /></span> Saving…</> : publishLabel}
           </button>
         </div>
       </div>

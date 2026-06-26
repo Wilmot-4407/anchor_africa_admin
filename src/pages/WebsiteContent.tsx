@@ -632,7 +632,10 @@ export function WebsiteContent() {
 
               {isLoading && (
                 <span className="flex items-center gap-1.5 text-xs text-slate-500 shrink-0">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing
+                  <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                    <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                    <span className="absolute inset-0 rounded-full bg-current" />
+                  </span> Syncing
                 </span>
               )}
             </div>

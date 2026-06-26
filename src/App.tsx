@@ -95,10 +95,11 @@ function AppShell() {
 function PageLoader() {
   return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0f1a2a] gap-4">
-      <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin" />
-        <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-accent-blue animate-spin animation-delay-150" />
+      <div role="status" className="relative w-12 h-12">
+        <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-75" />
+        <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-50 [animation-delay:200ms]" />
+        <div className="absolute inset-0 rounded-full bg-accent-blue/80" />
+        <span className="sr-only">Loading…</span>
       </div>
       <p className="text-sm text-slate-400 font-medium tracking-wide animate-pulse">
         Loading ANCHOR…

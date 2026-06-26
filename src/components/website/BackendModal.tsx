@@ -73,7 +73,12 @@ function IconSuggestButton({
       <button type="button" onClick={fetchSuggestions} disabled={loading}
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 whitespace-nowrap"
       >
-        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+        {loading ? (
+          <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+            <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+            <span className="absolute inset-0 rounded-full bg-current" />
+          </span>
+        ) : <Sparkles className="w-3.5 h-3.5" />}
         Suggest Icon
       </button>
       {open && (
@@ -99,7 +104,11 @@ function IconSuggestButton({
             <div className="p-3 overflow-y-auto">
               {loading && (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="w-10 h-10 rounded-full border-2 border-violet-500/30 border-t-violet-400 animate-spin" />
+                  <div role="status" className="relative w-10 h-10">
+                    <div className="animate-ping absolute inset-0 rounded-full bg-violet-400 opacity-75" />
+                    <div className="animate-ping absolute inset-0 rounded-full bg-violet-400 opacity-50 [animation-delay:200ms]" />
+                    <div className="absolute inset-0 rounded-full bg-violet-400/80" />
+                  </div>
                   <p className="text-xs text-slate-400">Analysing your service…</p>
                 </div>
               )}

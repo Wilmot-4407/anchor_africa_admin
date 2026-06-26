@@ -13,7 +13,6 @@ import {
   Globe,
   FileText,
   Activity,
-  Loader2,
 } from "lucide-react";
 import {
   BarChart as ReBarChart,
@@ -298,7 +297,12 @@ export function AnalyticsView() {
             disabled={exporting}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#0f1a2a] bg-accent-blue hover:bg-[#4ab0d6] rounded-xl transition-colors shadow-lg shadow-accent-blue/20 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+            {exporting ? (
+              <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                <span className="absolute inset-0 rounded-full bg-current" />
+              </span>
+            ) : <Download size={15} />}
             {exporting ? "Exporting…" : "Export PDF"}
           </button>
         </div>

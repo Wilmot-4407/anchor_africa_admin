@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, X, ChevronLeft, ChevronRight, Eye,
-  InboxIcon, User, Mail, Clock, CheckCircle2, MessageSquare, Loader2,
+  InboxIcon, User, Mail, Clock, CheckCircle2, MessageSquare,
 } from 'lucide-react';
 import type { AppDispatch, RootState } from '../../redux/store';
 import type { FormResponseRecord, FormResponseStatus } from '../../redux/types';
@@ -139,7 +139,12 @@ export function ResponsesTable({ formId }: ResponsesTableProps) {
   if (isLoading && items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Loader2 className="w-6 h-6 text-accent-blue animate-spin mb-3" />
+        <div role="status" className="relative w-8 h-8 mb-3">
+          <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-75" />
+          <div className="animate-ping absolute inset-0 rounded-full bg-accent-blue opacity-50 [animation-delay:200ms]" />
+          <div className="absolute inset-0 rounded-full bg-accent-blue/80" />
+          <span className="sr-only">Loading…</span>
+        </div>
         <p className="text-slate-500 text-sm">Loading responses…</p>
       </div>
     );

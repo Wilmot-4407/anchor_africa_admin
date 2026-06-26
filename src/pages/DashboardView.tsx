@@ -174,7 +174,10 @@ export function DashboardView() {
         <div className="flex items-center gap-3">
           {isLoading && (
             <div className="flex items-center gap-2 text-xs text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-              <RefreshCw className="w-3 h-3 animate-spin" />
+              <span className="relative inline-flex w-3 h-3 flex-shrink-0">
+                <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                <span className="absolute inset-0 rounded-full bg-current" />
+              </span>
               Syncing…
             </div>
           )}

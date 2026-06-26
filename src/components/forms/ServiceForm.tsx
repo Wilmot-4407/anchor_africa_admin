@@ -134,7 +134,12 @@ function IconSuggestButton({
           : "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors disabled:opacity-50 whitespace-nowrap"
         }
       >
-        {loading ? <Loader2 className={compact ? "w-3 h-3 animate-spin" : "w-3.5 h-3.5 animate-spin"} /> : <Sparkles className={compact ? "w-3 h-3" : "w-3.5 h-3.5"} />}
+        {loading ? (
+          <span className={`relative inline-flex ${compact ? "w-3 h-3" : "w-3.5 h-3.5"} flex-shrink-0`}>
+            <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+            <span className="absolute inset-0 rounded-full bg-current" />
+          </span>
+        ) : <Sparkles className={compact ? "w-3 h-3" : "w-3.5 h-3.5"} />}
         {compact ? "AI" : "Suggest Icon"}
       </button>
       {open && (
@@ -159,9 +164,11 @@ function IconSuggestButton({
             <div className="p-3 overflow-y-auto">
               {loading && (
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-full border-2 border-violet-200 border-t-violet-500 animate-spin" />
-                    <Sparkles className="w-4 h-4 text-violet-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                  <div className="relative w-10 h-10">
+                    <div className="animate-ping absolute inset-0 rounded-full bg-violet-400 opacity-75" />
+                    <div className="animate-ping absolute inset-0 rounded-full bg-violet-400 opacity-50 [animation-delay:200ms]" />
+                    <div className="absolute inset-0 rounded-full bg-violet-400/80" />
+                    <Sparkles className="w-4 h-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10" />
                   </div>
                   <p className="text-xs text-slate-500">Analysing your service…</p>
                 </div>

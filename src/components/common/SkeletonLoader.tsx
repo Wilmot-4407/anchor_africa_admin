@@ -2,21 +2,16 @@
 
 // ── Brand Spinner ──────────────────────────────────────────────────────────
 export function BrandSpinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const dims =
-    size === "sm" ? "w-8 h-8" : size === "lg" ? "w-20 h-20" : "w-12 h-12";
-
-  const inner =
-    size === "sm" ? "inset-1.5" : size === "lg" ? "inset-3" : "inset-2";
-
+  const dims  = size === "sm" ? "w-5 h-5"   : size === "lg" ? "w-12 h-12" : "w-10 h-10";
+  const clr   = size === "sm" ? "bg-current" : "bg-accent-blue";
+  const clrBg = size === "sm" ? "bg-current" : "bg-accent-blue/80";
   return (
-    <div className={`relative ${dims} flex-shrink-0`}>
-      <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin" />
-      <div
-        className={`absolute ${inner} rounded-full border-[3px] border-transparent border-t-secondary animate-spin`}
-        style={{ animationDirection: "reverse", animationDuration: "0.7s" }}
-      />
-    </div>
+    <span role="status" className={`relative inline-flex ${dims} flex-shrink-0`}>
+      <span className={`animate-ping absolute inset-0 rounded-full ${clr} opacity-75`} />
+      <span className={`animate-ping absolute inset-0 rounded-full ${clr} opacity-50 [animation-delay:200ms]`} />
+      <span className={`absolute inset-0 rounded-full ${clrBg}`} />
+      <span className="sr-only">Loading…</span>
+    </span>
   );
 }
 

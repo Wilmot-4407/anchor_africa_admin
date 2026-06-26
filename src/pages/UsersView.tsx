@@ -169,7 +169,12 @@ function DeleteModal({
             disabled={isLoading}
             className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {isLoading && <RefreshCw size={13} className="animate-spin" />}
+            {isLoading && (
+              <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                <span className="absolute inset-0 rounded-full bg-current" />
+              </span>
+            )}
             Delete
           </button>
         </div>
@@ -417,7 +422,12 @@ function UserFormModal({
             disabled={isLoading}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] text-sm font-bold transition-colors disabled:opacity-60 shadow-lg shadow-accent-blue/20"
           >
-            {isLoading && <RefreshCw size={13} className="animate-spin" />}
+            {isLoading && (
+              <span className="relative inline-flex w-3.5 h-3.5 flex-shrink-0">
+                <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+                <span className="absolute inset-0 rounded-full bg-current" />
+              </span>
+            )}
             {isEdit ? "Save Changes" : "Create User"}
           </button>
         </div>
@@ -674,7 +684,12 @@ export function UsersView() {
           onClick={() => dispatch(fetchUsers())}
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-400 border border-white/10 rounded-xl hover:bg-white/5 hover:text-white transition-colors ml-auto"
         >
-          <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
+          {isLoading ? (
+            <span className="relative inline-flex w-3 h-3 flex-shrink-0">
+              <span className="animate-ping absolute inset-0 rounded-full bg-current opacity-75" />
+              <span className="absolute inset-0 rounded-full bg-current" />
+            </span>
+          ) : <RefreshCw size={12} />}
           Refresh
         </button>
       </div>
