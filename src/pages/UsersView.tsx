@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  RefreshCw,
+  // RefreshCw,
   Eye,
   EyeOff,
   ChevronLeft,
@@ -45,7 +45,11 @@ const stagger = {
 };
 const fadeUp = {
   hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+  },
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -64,7 +68,10 @@ function formatDate(dateStr?: string) {
 }
 
 function getInitials(user: AdminUser): string {
-  return `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "?";
+  return (
+    `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() ||
+    "?"
+  );
 }
 
 function getAvatarGradient(name: string): string {
@@ -98,15 +105,36 @@ const selectCls =
 // ── Badges ────────────────────────────────────────────────────────────────────
 
 function RoleBadge({ role }: { role: string }) {
-  const cfg: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-    admin:  { label: "Admin",  cls: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",  icon: <Shield size={9} /> },
-    staff:  { label: "Staff",  cls: "bg-teal-500/10 text-teal-400 border-teal-500/20",        icon: <UserCog size={9} /> },
-    editor: { label: "Editor", cls: "bg-violet-500/10 text-violet-400 border-violet-500/20",  icon: <Edit2 size={9} /> },
-    user:   { label: "User",   cls: "bg-white/5 text-slate-400 border-white/10",              icon: <User size={9} /> },
+  const cfg: Record<
+    string,
+    { label: string; cls: string; icon: React.ReactNode }
+  > = {
+    admin: {
+      label: "Admin",
+      cls: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+      icon: <Shield size={9} />,
+    },
+    staff: {
+      label: "Staff",
+      cls: "bg-teal-500/10 text-teal-400 border-teal-500/20",
+      icon: <UserCog size={9} />,
+    },
+    editor: {
+      label: "Editor",
+      cls: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+      icon: <Edit2 size={9} />,
+    },
+    user: {
+      label: "User",
+      cls: "bg-white/5 text-slate-400 border-white/10",
+      icon: <User size={9} />,
+    },
   };
   const { label, cls, icon } = cfg[role] ?? cfg.user;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cls}`}>
+    <span
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cls}`}
+    >
       {icon} {label}
     </span>
   );
@@ -139,7 +167,10 @@ function DeleteModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0f1a2a]/80 backdrop-blur-sm" onClick={onCancel} />
+      <div
+        className="absolute inset-0 bg-[#0f1a2a]/80 backdrop-blur-sm"
+        onClick={onCancel}
+      />
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -149,7 +180,9 @@ function DeleteModal({
         <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle size={20} className="text-red-400" />
         </div>
-        <h3 className="text-lg font-bold text-white text-center">Delete User</h3>
+        <h3 className="text-lg font-bold text-white text-center">
+          Delete User
+        </h3>
         <p className="text-sm text-slate-400 text-center mt-2 leading-relaxed">
           Are you sure you want to delete{" "}
           <span className="font-semibold text-white">
@@ -216,23 +249,27 @@ function UserFormModal({
   const [form, setForm] = useState<FormState>(() => {
     if (editingUser) {
       return {
-        firstName:   editingUser.firstName   ?? "",
-        lastName:    editingUser.lastName    ?? "",
-        userName:    editingUser.userName    ?? "",
-        email:       editingUser.email       ?? "",
-        password:    "",
-        dob:         editingUser.dob ? new Date(editingUser.dob).toISOString().split("T")[0] : "",
-        role:        editingUser.role   ?? "user",
-        status:      editingUser.status ?? "active",
+        firstName: editingUser.firstName ?? "",
+        lastName: editingUser.lastName ?? "",
+        userName: editingUser.userName ?? "",
+        email: editingUser.email ?? "",
+        password: "",
+        dob: editingUser.dob
+          ? new Date(editingUser.dob).toISOString().split("T")[0]
+          : "",
+        role: editingUser.role ?? "user",
+        status: editingUser.status ?? "active",
         phoneNumber: editingUser.phoneNumber ?? "",
-        address:     editingUser.address     ?? "",
+        address: editingUser.address ?? "",
       };
     }
     return { ...EMPTY_FORM };
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
 
   const field = (key: keyof FormState, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -240,12 +277,12 @@ function UserFormModal({
   const validateAll = (): boolean => {
     const e: Partial<Record<keyof FormState, string>> = {};
     if (!form.firstName.trim()) e.firstName = "Required";
-    if (!form.lastName.trim())  e.lastName  = "Required";
-    if (!form.userName.trim())  e.userName  = "Required";
-    if (!form.email.trim())     e.email     = "Required";
+    if (!form.lastName.trim()) e.lastName = "Required";
+    if (!form.userName.trim()) e.userName = "Required";
+    if (!form.email.trim()) e.email = "Required";
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
     if (!isEdit && !form.password.trim()) e.password = "Required";
-    if (!isEdit && !form.dob)             e.dob      = "Required";
+    if (!isEdit && !form.dob) e.dob = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -263,7 +300,10 @@ function UserFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#0f1a2a]/80 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-[#0f1a2a]/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -280,7 +320,9 @@ function UserFormModal({
               <h2 className="text-base font-bold text-white">
                 {isEdit ? "Edit User" : "Create New User"}
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Fill in the details below</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Fill in the details below
+              </p>
             </div>
           </div>
           <button
@@ -294,36 +336,83 @@ function UserFormModal({
         {/* Form body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 scrollbar-brand">
           <form id="user-form" onSubmit={handleSubmit} className="space-y-6">
-
             {/* Personal Info */}
             <div>
               {sectionLabel("Personal Info")}
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>First Name <span className="text-red-400">*</span></label>
-                    <input value={form.firstName} onChange={(e) => field("firstName", e.target.value)} placeholder="e.g. Adebayo" className={inputCls(!!errors.firstName)} />
-                    {errors.firstName && <p className="text-[11px] text-red-400 mt-1">{errors.firstName}</p>}
+                    <label className={labelCls}>
+                      First Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      value={form.firstName}
+                      onChange={(e) => field("firstName", e.target.value)}
+                      placeholder="e.g. Adebayo"
+                      className={inputCls(!!errors.firstName)}
+                    />
+                    {errors.firstName && (
+                      <p className="text-[11px] text-red-400 mt-1">
+                        {errors.firstName}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label className={labelCls}>Last Name <span className="text-red-400">*</span></label>
-                    <input value={form.lastName} onChange={(e) => field("lastName", e.target.value)} placeholder="e.g. Adeyemi" className={inputCls(!!errors.lastName)} />
-                    {errors.lastName && <p className="text-[11px] text-red-400 mt-1">{errors.lastName}</p>}
+                    <label className={labelCls}>
+                      Last Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      value={form.lastName}
+                      onChange={(e) => field("lastName", e.target.value)}
+                      placeholder="e.g. Adeyemi"
+                      className={inputCls(!!errors.lastName)}
+                    />
+                    {errors.lastName && (
+                      <p className="text-[11px] text-red-400 mt-1">
+                        {errors.lastName}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Username <span className="text-red-400">*</span></label>
-                    <input value={form.userName} onChange={(e) => field("userName", e.target.value)} placeholder="e.g. adeyemi_anchor" className={inputCls(!!errors.userName)} />
-                    {errors.userName && <p className="text-[11px] text-red-400 mt-1">{errors.userName}</p>}
+                    <label className={labelCls}>
+                      Username <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      value={form.userName}
+                      onChange={(e) => field("userName", e.target.value)}
+                      placeholder="e.g. adeyemi_anchor"
+                      className={inputCls(!!errors.userName)}
+                    />
+                    {errors.userName && (
+                      <p className="text-[11px] text-red-400 mt-1">
+                        {errors.userName}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label className={labelCls}>Email Address <span className="text-red-400">*</span></label>
+                    <label className={labelCls}>
+                      Email Address <span className="text-red-400">*</span>
+                    </label>
                     <div className="relative">
-                      <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                      <input type="email" value={form.email} onChange={(e) => field("email", e.target.value)} placeholder="user@anchor.org" className={`${inputCls(!!errors.email)} pl-8`} />
+                      <Mail
+                        size={13}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                      />
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => field("email", e.target.value)}
+                        placeholder="user@anchor.org"
+                        className={`${inputCls(!!errors.email)} pl-8`}
+                      />
                     </div>
-                    {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+                    {errors.email && (
+                      <p className="text-[11px] text-red-400 mt-1">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -336,26 +425,62 @@ function UserFormModal({
                 <div>
                   <label className={labelCls}>
                     Password{" "}
-                    {isEdit
-                      ? <span className="font-normal text-slate-500">(leave blank to keep current)</span>
-                      : <span className="text-red-400">*</span>
-                    }
+                    {isEdit ? (
+                      <span className="font-normal text-slate-500">
+                        (leave blank to keep current)
+                      </span>
+                    ) : (
+                      <span className="text-red-400">*</span>
+                    )}
                   </label>
                   <div className="relative">
-                    <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => field("password", e.target.value)} placeholder={isEdit ? "Enter new password to change" : "Min. 8 characters"} className={`${inputCls(!!errors.password)} pr-10`} />
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(e) => field("password", e.target.value)}
+                      placeholder={
+                        isEdit
+                          ? "Enter new password to change"
+                          : "Min. 8 characters"
+                      }
+                      className={`${inputCls(!!errors.password)} pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    >
                       {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-[11px] text-red-400 mt-1">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="text-[11px] text-red-400 mt-1">
+                      {errors.password}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className={labelCls}>Date of Birth {!isEdit && <span className="text-red-400">*</span>}</label>
+                  <label className={labelCls}>
+                    Date of Birth{" "}
+                    {!isEdit && <span className="text-red-400">*</span>}
+                  </label>
                   <div className="relative">
-                    <Calendar size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input type="date" value={form.dob} onChange={(e) => field("dob", e.target.value)} className={`${inputCls(!!errors.dob)} pl-8`} />
+                    <Calendar
+                      size={13}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                    <input
+                      type="date"
+                      value={form.dob}
+                      onChange={(e) => field("dob", e.target.value)}
+                      className={`${inputCls(!!errors.dob)} pl-8`}
+                    />
                   </div>
-                  {errors.dob && <p className="text-[11px] text-red-400 mt-1">{errors.dob}</p>}
+                  {errors.dob && (
+                    <p className="text-[11px] text-red-400 mt-1">
+                      {errors.dob}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -366,7 +491,16 @@ function UserFormModal({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Role</label>
-                  <select value={form.role} onChange={(e) => field("role", e.target.value as "user" | "admin" | "staff" | "editor")} className={selectCls}>
+                  <select
+                    value={form.role}
+                    onChange={(e) =>
+                      field(
+                        "role",
+                        e.target.value as "user" | "admin" | "staff" | "editor",
+                      )
+                    }
+                    className={selectCls}
+                  >
                     <option value="user">User (Default)</option>
                     <option value="editor">Editor</option>
                     <option value="staff">Staff</option>
@@ -375,7 +509,13 @@ function UserFormModal({
                 </div>
                 <div>
                   <label className={labelCls}>Status</label>
-                  <select value={form.status} onChange={(e) => field("status", e.target.value as "active" | "inactive")} className={selectCls}>
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      field("status", e.target.value as "active" | "inactive")
+                    }
+                    className={selectCls}
+                  >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
@@ -390,20 +530,35 @@ function UserFormModal({
                 <div>
                   <label className={labelCls}>Phone Number</label>
                   <div className="relative">
-                    <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input value={form.phoneNumber} onChange={(e) => field("phoneNumber", e.target.value)} placeholder="+234 800 000 0000" className={`${inputCls()} pl-8`} />
+                    <Phone
+                      size={13}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                    <input
+                      value={form.phoneNumber}
+                      onChange={(e) => field("phoneNumber", e.target.value)}
+                      placeholder="+234 800 000 0000"
+                      className={`${inputCls()} pl-8`}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={labelCls}>Address</label>
                   <div className="relative">
-                    <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input value={form.address} onChange={(e) => field("address", e.target.value)} placeholder="Lagos, Nigeria" className={`${inputCls()} pl-8`} />
+                    <MapPin
+                      size={13}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                    <input
+                      value={form.address}
+                      onChange={(e) => field("address", e.target.value)}
+                      placeholder="Lagos, Nigeria"
+                      className={`${inputCls()} pl-8`}
+                    />
                   </div>
                 </div>
               </div>
             </div>
-
           </form>
         </div>
 
@@ -446,8 +601,12 @@ export function UsersView() {
   const currentAuthUser = useSelector((state: RootState) => state.auth.user);
 
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "staff" | "editor" | "user">("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [roleFilter, setRoleFilter] = useState<
+    "all" | "admin" | "staff" | "editor" | "user"
+  >("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -455,10 +614,15 @@ export function UsersView() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => { dispatch(fetchUsers()); }, [dispatch]);
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   useEffect(() => {
-    if (error) { toast.error(error); dispatch(clearError()); }
+    if (error) {
+      toast.error(error);
+      dispatch(clearError());
+    }
   }, [error, dispatch]);
 
   const filtered = useMemo(() => {
@@ -470,33 +634,45 @@ export function UsersView() {
         u.lastName?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         u.userName?.toLowerCase().includes(q);
-      const matchesRole   = roleFilter   === "all" || u.role   === roleFilter;
+      const matchesRole = roleFilter === "all" || u.role === roleFilter;
       const matchesStatus = statusFilter === "all" || u.status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, search, roleFilter, statusFilter]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const adminCount  = users.filter((u) => u.role   === "admin").length;
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const adminCount = users.filter((u) => u.role === "admin").length;
   const activeCount = users.filter((u) => u.status === "active").length;
 
-  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter]);
+  useEffect(() => {
+    setPage(1);
+  }, [search, roleFilter, statusFilter]);
 
-  const openCreate = () => { setEditingUser(null); setShowForm(true); };
-  const openEdit   = (u: AdminUser) => { setEditingUser(u); setShowForm(true); };
+  const openCreate = () => {
+    setEditingUser(null);
+    setShowForm(true);
+  };
+  const openEdit = (u: AdminUser) => {
+    setEditingUser(u);
+    setShowForm(true);
+  };
 
   const handleFormSubmit = async (data: FormState) => {
     setIsSaving(true);
     try {
       if (editingUser) {
         const payload: Record<string, unknown> = {
-          firstName: data.firstName,  lastName:    data.lastName,
-          userName:  data.userName,   email:       data.email,
-          role:      data.role,       status:      data.status,
-          phoneNumber: data.phoneNumber, address:  data.address,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          userName: data.userName,
+          email: data.email,
+          role: data.role,
+          status: data.status,
+          phoneNumber: data.phoneNumber,
+          address: data.address,
         };
-        if (data.dob)      payload.dob      = data.dob;
+        if (data.dob) payload.dob = data.dob;
         if (data.password) payload.password = data.password;
         const userId = editingUser._id ?? editingUser.id;
         await dispatch(updateUser({ id: userId, data: payload })).unwrap();
@@ -574,7 +750,10 @@ export function UsersView() {
       className="p-6 lg:p-8 max-w-7xl mx-auto"
     >
       {/* ── Header ── */}
-      <motion.div variants={fadeUp} className="mb-7 flex items-start justify-between">
+      <motion.div
+        variants={fadeUp}
+        className="mb-7 flex items-start justify-between"
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Users size={18} className="text-primary" />
@@ -604,7 +783,9 @@ export function UsersView() {
             className="bg-[#1b2940] rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-colors"
           >
             <div className="flex justify-between items-start mb-5">
-              <p className="text-slate-400 text-sm font-medium leading-snug">{card.label}</p>
+              <p className="text-slate-400 text-sm font-medium leading-snug">
+                {card.label}
+              </p>
               <button className="text-slate-500 hover:text-white transition-colors p-0.5">
                 <MoreHorizontal className="w-4 h-4" />
               </button>
@@ -624,7 +805,9 @@ export function UsersView() {
                     <TrendingUp className="w-3.5 h-3.5" />
                     {card.trend}
                   </span>
-                  <span className="text-slate-500 text-sm">{card.trendLabel}</span>
+                  <span className="text-slate-500 text-sm">
+                    {card.trendLabel}
+                  </span>
                 </div>
               </>
             )}
@@ -636,7 +819,10 @@ export function UsersView() {
       <div className="bg-[#1b2940] rounded-2xl border border-white/10 px-4 py-3 mb-5 flex items-center gap-3 flex-wrap">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search
+            size={13}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+          />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -659,7 +845,11 @@ export function UsersView() {
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-slate-500 font-medium">Role:</span>
           {(["all", "admin", "staff", "editor", "user"] as const).map((r) => (
-            <button key={r} onClick={() => setRoleFilter(r)} className={filterPillCls(roleFilter === r)}>
+            <button
+              key={r}
+              onClick={() => setRoleFilter(r)}
+              className={filterPillCls(roleFilter === r)}
+            >
               {r}
             </button>
           ))}
@@ -671,7 +861,11 @@ export function UsersView() {
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-slate-500 font-medium">Status:</span>
           {(["all", "active", "inactive"] as const).map((s) => (
-            <button key={s} onClick={() => setStatusFilter(s)} className={filterPillCls(statusFilter === s)}>
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={filterPillCls(statusFilter === s)}
+            >
               {s}
             </button>
           ))}
@@ -680,7 +874,7 @@ export function UsersView() {
         <div className="w-px h-5 bg-white/10 hidden sm:block" />
 
         {/* Refresh */}
-        <button
+        {/* <button
           onClick={() => dispatch(fetchUsers())}
           className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-400 border border-white/10 rounded-xl hover:bg-white/5 hover:text-white transition-colors ml-auto"
         >
@@ -691,7 +885,7 @@ export function UsersView() {
             </span>
           ) : <RefreshCw size={12} />}
           Refresh
-        </button>
+        </button> */}
       </div>
 
       {/* ── Loading skeleton ── */}
@@ -757,9 +951,9 @@ export function UsersView() {
 
           <div className="divide-y divide-white/[0.04]">
             {paginated.map((u, idx) => {
-              const userId       = u._id ?? u.id;
+              const userId = u._id ?? u.id;
               const isCurrentUser = currentAuthUser?.id === userId;
-              const gradient     = getAvatarGradient(u.firstName ?? "U");
+              const gradient = getAvatarGradient(u.firstName ?? "U");
 
               return (
                 <div
@@ -776,8 +970,10 @@ export function UsersView() {
                     <div
                       className={`w-9 h-9 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 text-white font-bold text-xs overflow-hidden`}
                     >
-                      {u.profilePicture && u.profilePicture !== "default.png" &&
-                       (u.profilePicture.startsWith("http://") || u.profilePicture.startsWith("https://")) ? (
+                      {u.profilePicture &&
+                      u.profilePicture !== "default.png" &&
+                      (u.profilePicture.startsWith("http://") ||
+                        u.profilePicture.startsWith("https://")) ? (
                         <img
                           src={u.profilePicture}
                           alt={u.firstName}
@@ -791,7 +987,9 @@ export function UsersView() {
                       <p className="text-sm font-semibold text-white truncate">
                         {u.firstName} {u.lastName}
                         {isCurrentUser && (
-                          <span className="ml-1.5 text-[10px] font-normal text-slate-500">(you)</span>
+                          <span className="ml-1.5 text-[10px] font-normal text-slate-500">
+                            (you)
+                          </span>
                         )}
                       </p>
                       <p className="text-[11px] text-slate-500 truncate">
@@ -808,7 +1006,9 @@ export function UsersView() {
                   {/* Email */}
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Mail size={11} className="text-slate-600 flex-shrink-0" />
-                    <span className="text-xs text-slate-400 truncate">{u.email}</span>
+                    <span className="text-xs text-slate-400 truncate">
+                      {u.email}
+                    </span>
                   </div>
 
                   {/* Role */}
@@ -845,8 +1045,11 @@ export function UsersView() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-white/10 bg-[#0f1a2a]/20 rounded-b-2xl">
               <p className="text-xs text-slate-500">
-                Page <span className="font-semibold text-slate-300">{page}</span> of{" "}
-                <span className="font-semibold text-slate-300">{totalPages}</span>
+                Page{" "}
+                <span className="font-semibold text-slate-300">{page}</span> of{" "}
+                <span className="font-semibold text-slate-300">
+                  {totalPages}
+                </span>
                 &nbsp;·&nbsp;{filtered.length} users
               </p>
               <div className="flex items-center gap-1">
