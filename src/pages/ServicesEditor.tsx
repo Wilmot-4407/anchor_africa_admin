@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { fetchServicesAdmin, deleteService } from "../redux/actions/services";
 import { AppDispatch, RootState } from "../redux/store";
 import { PageSpinner } from "../components/common/SkeletonLoader";
@@ -484,11 +485,21 @@ export function ServicesEditor() {
                   {(page - 1) * PAGE_SIZE + idx + 1}
                 </span>
 
-                {/* Title */}
+                {/* Title + Icon */}
                 <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 text-sm truncate">
-                    {service.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    {service.icon && (() => {
+                      const IC = (LucideIcons as any)[service.icon];
+                      return IC ? (
+                        <span className="flex-shrink-0 w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                          <IC className="w-3.5 h-3.5" />
+                        </span>
+                      ) : null;
+                    })()}
+                    <p className="font-semibold text-slate-800 text-sm truncate">
+                      {service.title}
+                    </p>
+                  </div>
                   <p className="text-[11px] text-slate-400 font-mono truncate">
                     /{service.slug}
                   </p>

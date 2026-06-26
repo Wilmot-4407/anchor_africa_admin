@@ -26,22 +26,19 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   path: string;
-  adminOnly?: boolean;
+  roles?: string[];
 }
 
-const mainNavItems: NavItem[] = [
+const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Website", icon: Globe, path: "/website" },
-  { label: "Campaign Forms", icon: ClipboardList, path: "/forms" },
-  { label: "Appointments", icon: Calendar, path: "/appointments" },
-  { label: "Clients", icon: Users, path: "/clients" },
-  { label: "Messages", icon: MessageSquare, path: "/messages" },
-  { label: "Analytics", icon: BarChart3, path: "/analytics" },
-];
-
-const adminNavItems: NavItem[] = [
-  { label: "User Management", icon: UserCog, path: "/users", adminOnly: true },
-  { label: "Activity Log", icon: Clock, path: "/activity-log", adminOnly: true },
+  { label: "Website", icon: Globe, path: "/website", roles: ["admin", "editor"] },
+  { label: "Campaign Forms", icon: ClipboardList, path: "/forms", roles: ["admin", "editor", "staff"] },
+  { label: "Appointments", icon: Calendar, path: "/appointments", roles: ["admin", "staff"] },
+  { label: "Clients", icon: Users, path: "/clients", roles: ["admin", "staff"] },
+  { label: "Messages", icon: MessageSquare, path: "/messages", roles: ["admin", "staff"] },
+  { label: "Analytics", icon: BarChart3, path: "/analytics", roles: ["admin", "staff"] },
+  { label: "User Management", icon: UserCog, path: "/users", roles: ["admin"] },
+  { label: "Activity Log", icon: Clock, path: "/activity-log", roles: ["admin"] },
 ];
 
 function LogoutModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
@@ -86,11 +83,11 @@ export function Sidebar() {
   const location = useLocation();
   const { sidebarCollapsed, toggleSidebar } = useNavigation();
   const { user } = useSelector((state: RootState) => state.auth);
-  const isAdmin = user?.role === "admin";
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const visibleAdminItems = isAdmin ? adminNavItems : [];
-  const allItems = [...mainNavItems, ...visibleAdminItems];
+  const visibleItems = navItems.filter(
+    (item) => !item.roles || item.roles.includes(user?.role ?? "user"),
+  );
 
   const userInitials = user
     ? (user.firstName?.[0] ?? "") + (user.lastName?.[0] ?? "")
@@ -144,7 +141,7 @@ export function Sidebar() {
           </p>
         )}
         <ul className="space-y-0.5">
-          {allItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive =
             location.pathname === item.path ||
             location.pathname.startsWith(item.path + '/');

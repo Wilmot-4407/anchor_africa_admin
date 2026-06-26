@@ -1,10 +1,144 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Upload } from 'lucide-react';
+import { X, Plus, Upload, Sparkles, Loader2, Check } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import type { BlogPost, TeamMember, Service, FaqReason, About } from '../../redux/types';
+import api from '../../utils/api';
 
 export type BackendSectionId = 'blog' | 'team' | 'services' | 'faq' | 'about';
 export type BackendSaveData = Record<string, unknown>;
+
+// ── AI Icon Suggester ─────────────────────────────────────────────────────────
+
+const LUCIDE_ICON_NAMES: string[] = [
+  'Heart','Brain','Stethoscope','Activity','Thermometer','Pill','Syringe','Cross','Eye','Ear',
+  'Wind','Smile','Frown','Sun','Moon','Star','Zap','Shield','Lock','Users','User','UserCheck',
+  'Baby','PersonStanding','Footprints','Bone','Dna','FlaskConical','Microscope','TestTube',
+  'Leaf','Flower','TreePine','Sprout','Apple','Salad','Carrot','Droplets','Waves','Mountain',
+  'Bed','Sofa','Home','Building','Hospital','Ambulance','Bandage','HeartPulse','HandHeart',
+  'Hands','HandMetal','ClipboardList','ClipboardCheck','BookOpen','GraduationCap','Award',
+  'Trophy','Medal','MessageCircle','Phone','Mail','Globe','Clock','Calendar','Timer',
+  'AlarmClock','Coffee','Dumbbell','Bicycle','Running','Yoga','Accessibility','Scale',
+  'RefreshCw','RotateCcw','Infinity','CircleDot','CircleCheck','CheckCircle','Sparkles',
+  'Lightbulb','WandSparkles',
+];
+
+interface IconSuggestion { icon: string; reason: string; score: number }
+
+function IconSuggestButton({
+  title, shortDescription, currentIcon, onSelect,
+}: {
+  title: string; shortDescription: string; currentIcon: string; onSelect: (n: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<IconSuggestion[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  const fetchSuggestions = async () => {
+    if (!title.trim() && !shortDescription.trim()) {
+      setError('Please fill in the title or short description first.');
+      setOpen(true);
+      return;
+    }
+    setOpen(true); setLoading(true); setError(null); setSuggestions([]);
+    try {
+      const { data } = await api.post('/ai/suggest-icon', {
+        title: title.trim(), shortDescription: shortDescription.trim(),
+        fullDescription: '', icons: LUCIDE_ICON_NAMES,
+      });
+      if (!data?.success) throw new Error(data?.error || 'No suggestions returned');
+      const parsed: IconSuggestion[] = Array.isArray(data.suggestions) ? data.suggestions : [];
+      const valid = parsed.filter((s) => typeof (LucideIcons as Record<string, unknown>)[s.icon] === 'function');
+      setSuggestions(valid.length > 0 ? valid : parsed.slice(0, 8));
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
+      let msg = 'Could not get icon suggestions';
+      if (e.response?.status === 401) msg = 'Session expired — please log in again';
+      else if (e.response?.data?.error) msg = e.response.data.error;
+      else if (e.message) msg = e.message;
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelect = (iconName: string) => {
+    setSelected(iconName); onSelect(iconName); setTimeout(() => setOpen(false), 400);
+  };
+
+  return (
+    <>
+      <button type="button" onClick={fetchSuggestions} disabled={loading}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 whitespace-nowrap"
+      >
+        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+        Suggest Icon
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+          <div className="bg-[#1b2940] rounded-xl shadow-2xl border border-white/10 overflow-hidden w-80 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-semibold text-white">AI Icon Suggestions</span>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            {(title || shortDescription) && (
+              <div className="px-4 py-2 bg-white/5 border-b border-white/[0.06] flex-shrink-0">
+                <p className="text-[11px] text-slate-400 truncate">
+                  <span className="font-medium text-slate-300">{title || shortDescription}</span>
+                </p>
+              </div>
+            )}
+            <div className="p-3 overflow-y-auto">
+              {loading && (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <div className="w-10 h-10 rounded-full border-2 border-violet-500/30 border-t-violet-400 animate-spin" />
+                  <p className="text-xs text-slate-400">Analysing your service…</p>
+                </div>
+              )}
+              {error && !loading && <div className="py-4 text-center"><p className="text-xs text-red-400">{error}</p></div>}
+              {!loading && !error && suggestions.length > 0 && (
+                <>
+                  <p className="text-xs text-slate-500 mb-3">Click an icon to use it · sorted by relevance</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {suggestions.map((s) => {
+                      const IconComp = (LucideIcons as Record<string, unknown>)[s.icon] as React.ComponentType<{ className?: string }> | undefined;
+                      const isChosen = selected === s.icon || currentIcon === s.icon;
+                      return (
+                        <button key={s.icon} type="button" onClick={() => handleSelect(s.icon)} title={`${s.icon} — ${s.reason}`}
+                          className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border-2 transition-all group ${isChosen ? 'border-violet-400 bg-violet-500/10 text-violet-300' : 'border-white/10 hover:border-violet-400/50 hover:bg-violet-500/10 text-slate-400 hover:text-violet-300'}`}
+                        >
+                          <div className="relative">
+                            {IconComp ? <IconComp className="w-6 h-6" /> : <span className="text-xs font-mono">{s.icon.slice(0, 3)}</span>}
+                            {isChosen && (
+                              <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-violet-500 rounded-full flex items-center justify-center">
+                                <Check className="w-2 h-2 text-white" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[9px] font-medium leading-tight text-center line-clamp-1 w-full">{s.icon}</span>
+                          <span className="text-[8px] text-slate-500 leading-tight text-center">{s.score}/10</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-3 text-[10px] text-slate-600 text-center">Stored as Lucide icon name</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 // ── Shared styling ─────────────────────────────────────────────────────────────
 
@@ -604,8 +738,26 @@ function ServiceForm({ data, onChange }: { data: Record<string, unknown>; onChan
           onChange={(file) => set('_imageFile', file)}
         />
         <Field label="Icon">
-          <input type="text" value={str('icon')} onChange={(e) => set('icon', e.target.value)}
-            className={inputCls} placeholder="Icon identifier" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              {str('icon') && (() => {
+                const IC = (LucideIcons as Record<string, unknown>)[str('icon')] as React.ComponentType<{ className?: string }> | undefined;
+                return IC ? (
+                  <span className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-300">
+                    <IC className="w-5 h-5" />
+                  </span>
+                ) : null;
+              })()}
+              <input type="text" value={str('icon')} onChange={(e) => set('icon', e.target.value)}
+                className={inputCls} placeholder="Heart · Brain · Stethoscope (Lucide name)" />
+            </div>
+            <IconSuggestButton
+              title={str('title')}
+              shortDescription={str('shortDescription')}
+              currentIcon={str('icon')}
+              onSelect={(name) => set('icon', name)}
+            />
+          </div>
         </Field>
       </FormSection>
 

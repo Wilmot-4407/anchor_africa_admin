@@ -33,25 +33,53 @@ function AppShell() {
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/dashboard" element={<DashboardView />} />
-              <Route path="/appointments" element={<AppointmentsView />} />
-              <Route path="/clients" element={<ClientsView />} />
-              <Route path="/analytics" element={<AnalyticsView />} />
-              <Route path="/messages" element={<MessagesView />} />
               <Route path="/profile" element={<ProfileView />} />
+              <Route
+                path="/appointments"
+                element={
+                  <RoleRoute roles={["admin", "staff"]}>
+                    <AppointmentsView />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/clients"
+                element={
+                  <RoleRoute roles={["admin", "staff"]}>
+                    <ClientsView />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <RoleRoute roles={["admin", "staff"]}>
+                    <AnalyticsView />
+                  </RoleRoute>
+                }
+              />
+              <Route
+                path="/messages"
+                element={
+                  <RoleRoute roles={["admin", "staff"]}>
+                    <MessagesView />
+                  </RoleRoute>
+                }
+              />
               <Route
                 path="/users"
                 element={
-                  <AdminRoute>
+                  <RoleRoute roles={["admin"]}>
                     <UsersView />
-                  </AdminRoute>
+                  </RoleRoute>
                 }
               />
               <Route
                 path="/activity-log"
                 element={
-                  <AdminRoute>
+                  <RoleRoute roles={["admin"]}>
                     <ActivityLogView />
-                  </AdminRoute>
+                  </RoleRoute>
                 }
               />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -79,10 +107,10 @@ function PageLoader() {
   );
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+function RoleRoute({ roles, children }: { roles: string[]; children: React.ReactNode }) {
   const { user, isLoading } = useSelector((state: RootState) => state.auth);
   if (isLoading) return <PageLoader />;
-  if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
+  if (!user || !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -143,7 +171,9 @@ export function App() {
           path="/website"
           element={
             <ProtectedRoute>
-              <WebsiteContent />
+              <RoleRoute roles={["admin", "editor"]}>
+                <WebsiteContent />
+              </RoleRoute>
             </ProtectedRoute>
           }
         />
@@ -151,7 +181,9 @@ export function App() {
           path="/forms/*"
           element={
             <ProtectedRoute>
-              <CampaignForms />
+              <RoleRoute roles={["admin", "editor", "staff"]}>
+                <CampaignForms />
+              </RoleRoute>
             </ProtectedRoute>
           }
         />

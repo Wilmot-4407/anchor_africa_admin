@@ -5,7 +5,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "staff" | "editor";
   profilePicture: string;
   dob: string;
   status: "active" | "inactive";
@@ -94,7 +94,7 @@ export interface AdminUser {
   email: string;
   firstName: string;
   lastName: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "staff" | "editor";
   profilePicture?: string;
   dob?: string;
   status: "active" | "inactive";

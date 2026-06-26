@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, Fragment } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -98,13 +98,16 @@ const selectCls =
 // ── Badges ────────────────────────────────────────────────────────────────────
 
 function RoleBadge({ role }: { role: string }) {
-  return role === "admin" ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-      <Shield size={9} /> Admin
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/5 text-slate-400 border border-white/10">
-      <User size={9} /> User
+  const cfg: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
+    admin:  { label: "Admin",  cls: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",  icon: <Shield size={9} /> },
+    staff:  { label: "Staff",  cls: "bg-teal-500/10 text-teal-400 border-teal-500/20",        icon: <UserCog size={9} /> },
+    editor: { label: "Editor", cls: "bg-violet-500/10 text-violet-400 border-violet-500/20",  icon: <Edit2 size={9} /> },
+    user:   { label: "User",   cls: "bg-white/5 text-slate-400 border-white/10",              icon: <User size={9} /> },
+  };
+  const { label, cls, icon } = cfg[role] ?? cfg.user;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${cls}`}>
+      {icon} {label}
     </span>
   );
 }
@@ -184,47 +187,13 @@ const EMPTY_FORM = {
   email: "",
   password: "",
   dob: "",
-  role: "user" as "user" | "admin",
+  role: "user" as "user" | "admin" | "staff" | "editor",
   status: "active" as "active" | "inactive",
   phoneNumber: "",
   address: "",
 };
 
 type FormState = typeof EMPTY_FORM;
-
-const FORM_STEPS = ["Personal Info", "Security & Role", "Contact"];
-
-function UserStepBar({ current }: { current: number }) {
-  return (
-    <div className="flex items-start px-6 py-4 border-b border-white/[0.06]">
-      {FORM_STEPS.map((label, i) => (
-        <Fragment key={i}>
-          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                i < current
-                  ? "bg-emerald-500 text-white"
-                  : i === current
-                    ? "bg-accent-blue text-[#0f1a2a] ring-4 ring-accent-blue/20"
-                    : "bg-white/5 text-slate-500"
-              }`}
-            >
-              {i < current ? <CheckCircle2 size={13} /> : i + 1}
-            </div>
-            <span className={`text-[10px] font-semibold whitespace-nowrap ${
-              i < current ? "text-emerald-400" : i === current ? "text-accent-blue" : "text-slate-500"
-            }`}>
-              {label}
-            </span>
-          </div>
-          {i < FORM_STEPS.length - 1 && (
-            <div className={`flex-1 h-px mx-2 mt-3.5 transition-all ${i < current ? "bg-emerald-500/40" : "bg-white/10"}`} />
-          )}
-        </Fragment>
-      ))}
-    </div>
-  );
-}
 
 function UserFormModal({
   editingUser,
@@ -257,37 +226,35 @@ function UserFormModal({
     return { ...EMPTY_FORM };
   });
 
-  const [step, setStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
 
   const field = (key: keyof FormState, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const validateStep = (s: number): boolean => {
+  const validateAll = (): boolean => {
     const e: Partial<Record<keyof FormState, string>> = {};
-    if (s === 0) {
-      if (!form.firstName.trim()) e.firstName = "Required";
-      if (!form.lastName.trim())  e.lastName  = "Required";
-      if (!form.userName.trim())  e.userName  = "Required";
-      if (!form.email.trim())     e.email     = "Required";
-      else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
-    }
-    if (s === 1) {
-      if (!isEdit && !form.password.trim()) e.password = "Required";
-      if (!isEdit && !form.dob)             e.dob      = "Required";
-    }
+    if (!form.firstName.trim()) e.firstName = "Required";
+    if (!form.lastName.trim())  e.lastName  = "Required";
+    if (!form.userName.trim())  e.userName  = "Required";
+    if (!form.email.trim())     e.email     = "Required";
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
+    if (!isEdit && !form.password.trim()) e.password = "Required";
+    if (!isEdit && !form.dob)             e.dob      = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleNext = () => { if (validateStep(step)) setStep((s) => s + 1); };
-  const handleBack = () => { setErrors({}); setStep((s) => s - 1); };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateStep(step)) onSubmit(form);
+    if (validateAll()) onSubmit(form);
   };
+
+  const sectionLabel = (text: string) => (
+    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pb-1.5 border-b border-white/[0.06]">
+      {text}
+    </p>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -308,9 +275,7 @@ function UserFormModal({
               <h2 className="text-base font-bold text-white">
                 {isEdit ? "Edit User" : "Create New User"}
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Step {step + 1} of {FORM_STEPS.length} — {FORM_STEPS[step]}
-              </p>
+              <p className="text-xs text-slate-500 mt-0.5">Fill in the details below</p>
             </div>
           </div>
           <button
@@ -321,18 +286,14 @@ function UserFormModal({
           </button>
         </div>
 
-        {/* Step bar */}
-        <div className="flex-shrink-0">
-          <UserStepBar current={step} />
-        </div>
-
         {/* Form body */}
         <div className="overflow-y-auto flex-1 px-6 py-5 scrollbar-brand">
-          <form id="user-form" onSubmit={handleSubmit} className="space-y-4">
+          <form id="user-form" onSubmit={handleSubmit} className="space-y-6">
 
-            {/* ── Step 0: Personal Info ── */}
-            {step === 0 && (
-              <>
+            {/* Personal Info */}
+            <div>
+              {sectionLabel("Personal Info")}
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>First Name <span className="text-red-400">*</span></label>
@@ -345,7 +306,6 @@ function UserFormModal({
                     {errors.lastName && <p className="text-[11px] text-red-400 mt-1">{errors.lastName}</p>}
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Username <span className="text-red-400">*</span></label>
@@ -361,12 +321,13 @@ function UserFormModal({
                     {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
                   </div>
                 </div>
-              </>
-            )}
+              </div>
+            </div>
 
-            {/* ── Step 1: Security & Role ── */}
-            {step === 1 && (
-              <>
+            {/* Security */}
+            <div>
+              {sectionLabel("Security")}
+              <div className="space-y-4">
                 <div>
                   <label className={labelCls}>
                     Password{" "}
@@ -383,7 +344,6 @@ function UserFormModal({
                   </div>
                   {errors.password && <p className="text-[11px] text-red-400 mt-1">{errors.password}</p>}
                 </div>
-
                 <div>
                   <label className={labelCls}>Date of Birth {!isEdit && <span className="text-red-400">*</span>}</label>
                   <div className="relative">
@@ -392,28 +352,35 @@ function UserFormModal({
                   </div>
                   {errors.dob && <p className="text-[11px] text-red-400 mt-1">{errors.dob}</p>}
                 </div>
+              </div>
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelCls}>Role</label>
-                    <select value={form.role} onChange={(e) => field("role", e.target.value as "user" | "admin")} className={selectCls}>
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>Status</label>
-                    <select value={form.status} onChange={(e) => field("status", e.target.value as "active" | "inactive")} className={selectCls}>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
+            {/* Access Control */}
+            <div>
+              {sectionLabel("Access Control")}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Role</label>
+                  <select value={form.role} onChange={(e) => field("role", e.target.value as "user" | "admin" | "staff" | "editor")} className={selectCls}>
+                    <option value="user">User (Default)</option>
+                    <option value="editor">Editor</option>
+                    <option value="staff">Staff</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </div>
-              </>
-            )}
+                <div>
+                  <label className={labelCls}>Status</label>
+                  <select value={form.status} onChange={(e) => field("status", e.target.value as "active" | "inactive")} className={selectCls}>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-            {/* ── Step 2: Contact ── */}
-            {step === 2 && (
+            {/* Contact */}
+            <div>
+              {sectionLabel("Contact (Optional)")}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Phone Number</label>
@@ -430,32 +397,29 @@ function UserFormModal({
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+
           </form>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-white/[0.06] flex items-center gap-3 flex-shrink-0 bg-[#0f1a2a]/30">
-          {step > 0 ? (
-            <button type="button" onClick={handleBack} disabled={isLoading} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/10 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-50">
-              <ChevronLeft size={14} /> Back
-            </button>
-          ) : (
-            <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-white/10 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
-              Cancel
-            </button>
-          )}
-
-          {step < FORM_STEPS.length - 1 ? (
-            <button type="button" onClick={handleNext} disabled={isLoading} className="ml-auto flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] text-sm font-bold transition-colors disabled:opacity-60 shadow-lg shadow-accent-blue/20">
-              Next <ChevronRight size={14} />
-            </button>
-          ) : (
-            <button type="submit" form="user-form" disabled={isLoading} className="ml-auto flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] text-sm font-bold transition-colors disabled:opacity-60 shadow-lg shadow-accent-blue/20">
-              {isLoading && <RefreshCw size={13} className="animate-spin" />}
-              {isEdit ? "Save Changes" : "Create User"}
-            </button>
-          )}
+        <div className="px-6 py-4 border-t border-white/[0.06] flex items-center justify-end gap-3 flex-shrink-0 bg-[#0f1a2a]/30">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl border border-white/10 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="user-form"
+            disabled={isLoading}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-blue hover:bg-[#4ab0d6] text-[#0f1a2a] text-sm font-bold transition-colors disabled:opacity-60 shadow-lg shadow-accent-blue/20"
+          >
+            {isLoading && <RefreshCw size={13} className="animate-spin" />}
+            {isEdit ? "Save Changes" : "Create User"}
+          </button>
         </div>
       </motion.div>
     </div>
@@ -472,7 +436,7 @@ export function UsersView() {
   const currentAuthUser = useSelector((state: RootState) => state.auth.user);
 
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "staff" | "editor" | "user">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
@@ -684,7 +648,7 @@ export function UsersView() {
         {/* Role filter */}
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-slate-500 font-medium">Role:</span>
-          {(["all", "admin", "user"] as const).map((r) => (
+          {(["all", "admin", "staff", "editor", "user"] as const).map((r) => (
             <button key={r} onClick={() => setRoleFilter(r)} className={filterPillCls(roleFilter === r)}>
               {r}
             </button>
